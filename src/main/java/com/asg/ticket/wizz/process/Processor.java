@@ -1,6 +1,6 @@
 package com.asg.ticket.wizz.process;
 
-public interface Processor<I> {
+public interface Processor<R> {
 
-    void process(I input);
+    R process();
 }

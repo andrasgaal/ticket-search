@@ -1,5 +1,8 @@
 package com.asg.ticket.wizz.dto.search.response;
 
+import lombok.Data;
+
+@Data
 public class Fare {
 
     private final Price administrationFeePrice;
@@ -14,25 +17,5 @@ public class Fare {
         this.discountedPrice = discountedPrice;
         this.fullBasePrice = fullBasePrice;
         this.discountedFarePrice = discountedFarePrice;
-    }
-
-    public Price getAdministrationFeePrice() {
-        return administrationFeePrice;
-    }
-
-    public Price getBasePrice() {
-        return basePrice;
-    }
-
-    public Price getDiscountedPrice() {
-        return discountedPrice;
-    }
-
-    public Price getFullBasePrice() {
-        return fullBasePrice;
-    }
-
-    public Price getDiscountedFarePrice() {
-        return discountedFarePrice;
     }
 }

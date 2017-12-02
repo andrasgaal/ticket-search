@@ -1,15 +1,13 @@
 package com.asg.ticket.wizz.process;
 
+import com.asg.ticket.wizz.dto.Cities;
 import com.asg.ticket.wizz.dto.search.request.Flight;
-import com.asg.ticket.wizz.dto.search.request.SearchRequestBody;
-import com.asg.ticket.wizz.dto.search.response.SearchResponseBody;
+import com.asg.ticket.wizz.dto.search.request.SearchRequest;
+import com.asg.ticket.wizz.dto.search.response.SearchResponse;
 import com.google.gson.Gson;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
@@ -24,65 +22,66 @@ import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@Component("searchResultProcessor")
-public class SearchResultProcessor implements Processor<String> {
+@Component
+public class SearchResultProcessor extends BaseProcessor implements Processor<List<SearchResponse>> {
 
     private static final String SEARCH_PATH = "/search/search";
     private static final int HALF_YEAR_IN_DAYS = 180;
 
-    private final RestTemplate restClient;
     private final Gson GSON = new Gson();
     private final ExecutorService executor = newCachedThreadPool();
-
+    private String metadataUrl;
+    private Cities cities;
     private String searchUrl;
-    private HttpHeaders headers = new HttpHeaders();
 
-    @Autowired
-    public SearchResultProcessor(RestTemplate restClient) {
-        this.restClient = restClient;
-        headers.setContentType(APPLICATION_JSON);
+    public void setMetadataUrl(String metadataUrl) {
+        this.metadataUrl = metadataUrl;
     }
 
+    public void setCities(Cities cities) {
+        this.cities = cities;
+    }
 
     @Override
-    public void process(String input) {
-        searchUrl = UriComponentsBuilder.fromHttpUrl(input).path(SEARCH_PATH).toUriString();
+    public List<SearchResponse> process() {
+        searchUrl = UriComponentsBuilder.fromHttpUrl(metadataUrl).path(SEARCH_PATH).toUriString();
 
-        List<Future<SearchResponseBody>> searchRequests = new ArrayList<>();
+        List<Future<SearchResponse>> searchRequests = new ArrayList<>();
         getDatesForHalfAYear().forEach(date -> {
-            Future<SearchResponseBody> searchRequest =
+            Future<SearchResponse> outbound =
                     executor.submit(() -> getSearchResponse("BUD", "LTN", date));
-            executor.submit(() -> getSearchResponse("LTN", "BUD", date));
-            searchRequests.add(searchRequest);
+            Future<SearchResponse> inbound =
+                    executor.submit(() -> getSearchResponse("LTN", "BUD", date));
+            searchRequests.add(outbound);
+            searchRequests.add(inbound);
         });
 
-        List<SearchResponseBody> searchResult = getSearchResponses(searchRequests);
+        return getSearchResponses(searchRequests);
     }
 
-    private SearchResponseBody getSearchResponse(String departureStation, String arrivalStation, String departureDate) {
+    private SearchResponse getSearchResponse(String departureStation, String arrivalStation, String departureDate) {
         Flight[] flights = {
                 new Flight(departureStation, arrivalStation, departureDate)};
 
-        String postBody = GSON.toJson(new SearchRequestBody(flights, valueOf(1)));
-        HttpEntity<String> entity = new HttpEntity<>(postBody, headers);
+        String postBody = GSON.toJson(new SearchRequest(flights, valueOf(1)));
+        HttpEntity<String> entity = new HttpEntity<>(postBody, jsonHeaders);
 
-        ResponseEntity<String> response = restClient.exchange(searchUrl, POST, entity, String.class);
-        System.out.println(response.getBody());
-        return new Gson().fromJson(response.getBody(), SearchResponseBody.class);
+        ResponseEntity<String> response = restTemplate.exchange(searchUrl, POST, entity, String.class);
+        return new Gson().fromJson(response.getBody(), SearchResponse.class);
     }
 
     public List<String> getDatesForHalfAYear() {
         ArrayList<String> dates = new ArrayList<>();
-        for (int daysFromNow = 0; daysFromNow < HALF_YEAR_IN_DAYS; daysFromNow++) {
+        //for (int daysFromNow = 0; daysFromNow < HALF_YEAR_IN_DAYS; daysFromNow++) {
+        for (int daysFromNow = 0; daysFromNow < 10; daysFromNow++) {
             dates.add(LocalDate.now().plusDays(daysFromNow).format(ISO_LOCAL_DATE));
         }
 
         return dates;
     }
 
-    private List<SearchResponseBody> getSearchResponses(List<Future<SearchResponseBody>> searchRequests) {
+    private List<SearchResponse> getSearchResponses(List<Future<SearchResponse>> searchRequests) {
         return searchRequests
                 .stream()
                 .map(result -> {

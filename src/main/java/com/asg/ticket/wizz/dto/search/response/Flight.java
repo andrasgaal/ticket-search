@@ -1,5 +1,8 @@
 package com.asg.ticket.wizz.dto.search.response;
 
+import lombok.Data;
+
+@Data
 public class Flight {
 
     private final String departureStation;
@@ -14,25 +17,5 @@ public class Flight {
         this.departureDateTime = departureDateTime;
         this.arrivalDateTime = arrivalDateTime;
         this.fares = fares;
-    }
-
-    public String getDepartureStation() {
-        return departureStation;
-    }
-
-    public String getArrivalStation() {
-        return arrivalStation;
-    }
-
-    public String getDepartureDateTime() {
-        return departureDateTime;
-    }
-
-    public String getArrivalDateTime() {
-        return arrivalDateTime;
-    }
-
-    public Fare[] getFares() {
-        return fares;
     }
 }

@@ -1,0 +1,10 @@
+logging:
+  config: classpath:logback-local.xml
+
+search:
+  days: 3
+  whitelist:
+    enabled: true
+    iatas:
+      - BUD
+      - LTN

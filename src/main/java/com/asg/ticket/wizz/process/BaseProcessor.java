@@ -1,5 +1,6 @@
 package com.asg.ticket.wizz.process;
 
+import com.google.gson.Gson;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -12,10 +13,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @Data
 @Component
-public class BaseProcessor {
+public abstract class BaseProcessor<R> {
 
     @Autowired
     protected RestTemplate restTemplate;
+
+    protected final Gson GSON = new Gson();
 
     protected HttpHeaders jsonHeaders = new HttpHeaders();
 
@@ -23,4 +26,6 @@ public class BaseProcessor {
     private void init() {
         jsonHeaders.setContentType(APPLICATION_JSON);
     }
+
+    abstract R process();
 }

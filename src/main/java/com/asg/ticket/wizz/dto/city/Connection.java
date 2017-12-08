@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.dto;
+package com.asg.ticket.wizz.dto.city;
 
 import lombok.Data;
 

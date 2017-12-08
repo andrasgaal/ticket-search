@@ -1,10 +1,15 @@
 package com.asg.ticket.wizz.process;
 
-import com.asg.ticket.wizz.dto.Cities;
+import com.asg.ticket.wizz.WhitelistConfig;
+import com.asg.ticket.wizz.dto.city.Cities;
+import com.asg.ticket.wizz.dto.city.City;
+import com.asg.ticket.wizz.dto.city.Connection;
 import com.asg.ticket.wizz.dto.search.request.Flight;
 import com.asg.ticket.wizz.dto.search.request.SearchRequest;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
-import com.google.gson.Gson;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -13,51 +18,80 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import static java.lang.String.valueOf;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.util.Arrays.stream;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpMethod.POST;
 
+@Slf4j
 @Component
-public class SearchResultProcessor extends BaseProcessor implements Processor<List<SearchResponse>> {
+public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
 
     private static final String SEARCH_PATH = "/search/search";
-    private static final int HALF_YEAR_IN_DAYS = 180;
 
-    private final Gson GSON = new Gson();
     private final ExecutorService executor = newCachedThreadPool();
+    private final List<String> searchDates;
     private String metadataUrl;
-    private Cities cities;
+    private Cities allCities;
     private String searchUrl;
+    private int searchDays;
+
+    @Autowired
+    private WhitelistConfig whitelistConfig;
+
+    @Value("${search.whitelist.enabled}")
+    private boolean whiteListEnabled;
+
+    public SearchResultProcessor(@Value("${search.days}") int searchDays) {
+        this.searchDays = searchDays;
+        this.searchDates = getDates();
+    }
 
     public void setMetadataUrl(String metadataUrl) {
         this.metadataUrl = metadataUrl;
     }
 
-    public void setCities(Cities cities) {
-        this.cities = cities;
+    public void setAllCities(Cities allCities) {
+        this.allCities = allCities;
     }
 
     @Override
     public List<SearchResponse> process() {
         searchUrl = UriComponentsBuilder.fromHttpUrl(metadataUrl).path(SEARCH_PATH).toUriString();
 
-        List<Future<SearchResponse>> searchRequests = new ArrayList<>();
-        getDatesForHalfAYear().forEach(date -> {
-            Future<SearchResponse> outbound =
-                    executor.submit(() -> getSearchResponse("BUD", "LTN", date));
-            Future<SearchResponse> inbound =
-                    executor.submit(() -> getSearchResponse("LTN", "BUD", date));
-            searchRequests.add(outbound);
-            searchRequests.add(inbound);
+        List<Future<SearchResponse>> futureResponses = new ArrayList<>();
+        stream(allCities.getCities())
+        .filter(cityNotInWhitelist())
+        .forEach(city -> {
+            Connection[] connections = city.getConnections();
+            stream(connections).filter(connectionNotInWhitelist()).forEach(connection -> searchDates.forEach(date -> {
+                futureResponses.add(executor.submit(() -> getSearchResponse(city.getIata(), connection.getIata(), date)));
+                futureResponses.add(executor.submit(() -> getSearchResponse(connection.getIata(), city.getIata(), date)));
+            }));
         });
 
-        return getSearchResponses(searchRequests);
+        return collectSearchResponses(futureResponses);
+    }
+
+    private Predicate<City> cityNotInWhitelist() {
+        return city -> whiteListEnabled && inIataWhiteList(city.getIata());
+    }
+
+    private Predicate<Connection> connectionNotInWhitelist() {
+        return connection -> whiteListEnabled && inIataWhiteList(connection.getIata());
+    }
+
+    private boolean inIataWhiteList(String iata){
+        return whitelistConfig.getIatas().contains(iata);
     }
 
     private SearchResponse getSearchResponse(String departureStation, String arrivalStation, String departureDate) {
@@ -67,32 +101,35 @@ public class SearchResultProcessor extends BaseProcessor implements Processor<Li
         String postBody = GSON.toJson(new SearchRequest(flights, valueOf(1)));
         HttpEntity<String> entity = new HttpEntity<>(postBody, jsonHeaders);
 
+        log.info("Executing search for departureStation={}, arrivalStation={}, date={}",
+                departureStation, arrivalStation, departureDate);
         ResponseEntity<String> response = restTemplate.exchange(searchUrl, POST, entity, String.class);
-        return new Gson().fromJson(response.getBody(), SearchResponse.class);
+        return GSON.fromJson(response.getBody(), SearchResponse.class);
     }
 
-    public List<String> getDatesForHalfAYear() {
+    private List<String> getDates() {
         ArrayList<String> dates = new ArrayList<>();
-        //for (int daysFromNow = 0; daysFromNow < HALF_YEAR_IN_DAYS; daysFromNow++) {
-        for (int daysFromNow = 0; daysFromNow < 10; daysFromNow++) {
+        for (int daysFromNow = 0; daysFromNow < searchDays; daysFromNow++) {
             dates.add(LocalDate.now().plusDays(daysFromNow).format(ISO_LOCAL_DATE));
         }
 
         return dates;
     }
 
-    private List<SearchResponse> getSearchResponses(List<Future<SearchResponse>> searchRequests) {
-        return searchRequests
-                .stream()
-                .map(result -> {
-                    try {
-                        return result.get();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    private List<SearchResponse> collectSearchResponses(List<Future<SearchResponse>> futureResponses) {
+        return futureResponses.stream()
+                .map(this::safeFutureGet)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(toList());
+    }
+
+    private Optional<SearchResponse> safeFutureGet(Future<SearchResponse> searchResponseFuture) {
+        try {
+            return of(searchResponseFuture.get());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return empty();
     }
 }

@@ -1,8 +1,9 @@
 package com.asg.ticket.wizz;
 
-import com.asg.ticket.wizz.process.Processor;
+import com.asg.ticket.wizz.process.BaseProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.client.RestTemplate;
@@ -11,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 @ComponentScan(basePackageClasses = {
         Application.class,
-        Processor.class
+        BaseProcessor.class
 })
 public class Application {
 

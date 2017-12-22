@@ -4,6 +4,7 @@ import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -22,7 +23,7 @@ public class ProcessorStarter {
     @Autowired
     SearchResultProcessor searchResultProcessor;
 
-    @PostConstruct
+    @Scheduled(fixedRate = 60000)
     public void startProcessors() {
         String metadataUrl = metadataProcessor.process();
 

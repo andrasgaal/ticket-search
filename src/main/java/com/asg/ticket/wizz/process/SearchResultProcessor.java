@@ -8,6 +8,8 @@ import com.asg.ticket.wizz.dto.search.request.Flight;
 import com.asg.ticket.wizz.dto.search.request.SearchRequest;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -15,8 +17,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -28,6 +33,7 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpMethod.POST;
@@ -79,7 +85,9 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
             }));
         });
 
-        return collectSearchResponses(futureResponses);
+        List<SearchResponse> searchResponses = collectSearchResponses(futureResponses);
+        reportFlights(searchResponses);
+        return searchResponses;
     }
 
     private Predicate<City> cityNotInWhitelist() {
@@ -131,5 +139,16 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
             e.printStackTrace();
         }
         return empty();
+    }
+
+    private void reportFlights(List<SearchResponse> searchResponses) {
+        searchResponses.forEach(searchResponse -> {
+            try {
+                elasticClient.index(new IndexRequest("flights", "flights",
+                        randomUUID().toString()).source(GSON.toJson(searchResponse), XContentType.JSON));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

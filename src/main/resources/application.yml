@@ -2,7 +2,7 @@ logging:
   config: classpath:logback-local.xml
 
 search:
-  days: 3
+  days: 1
   whitelist:
     enabled: true
     iatas:

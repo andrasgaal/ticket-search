@@ -23,7 +23,6 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-$logback_version = '1.2.3'
 
 dependencies {
     compile("org.springframework.boot:spring-boot-starter")
@@ -31,9 +30,13 @@ dependencies {
     compile group: 'com.google.code.gson', name: 'gson', version: '2.3.1'
 
     compile("org.projectlombok:lombok:1.16.18")
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: $logback_version
+    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     compile group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
 
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: '6.1.0'
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '6.1.0'
+    compile group: 'org.elasticsearch.client', name: 'transport', version: '6.1.0'
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '6.1.0'
 
     testCompile("junit:junit")
 }

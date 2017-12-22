@@ -1,0 +1,19 @@
+version: "3"
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.1.0
+    ports: ['127.0.0.1:9200:9200']
+    networks: ['ticket-search']
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.1.0
+    ports: ['5601:5601']
+    networks: ['ticket-search']
+    depends_on: ['elasticsearch']
+
+#  logstash:
+#      image: docker.elastic.co/logstash/logstash:6.1.0
+#      networks: ['stack']
+#      depends_on: ['elasticsearch']
+
+networks: {ticket-search: {}}

@@ -1,0 +1,1 @@
+{“apiUrl":"https://be.wizzair.com/7.7.1/Api"}

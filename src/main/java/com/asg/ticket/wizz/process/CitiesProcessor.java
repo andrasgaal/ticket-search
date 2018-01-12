@@ -1,19 +1,16 @@
 package com.asg.ticket.wizz.process;
 
+import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
-import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.index.IndexRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 
-import static java.util.UUID.randomUUID;
 import static org.springframework.http.HttpMethod.GET;
 
 @Slf4j
@@ -21,15 +18,15 @@ import static org.springframework.http.HttpMethod.GET;
 public class CitiesProcessor extends BaseProcessor<Cities> {
 
     private static final String CITIES_PATH = "/asset/map";
-    private String metadataUrl;
+    private Metadata metadata;
 
-    public void setMetadataUrl(String metadataUrl) {
-        this.metadataUrl = metadataUrl;
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
     }
 
     @Override
     public Cities process() {
-        String citiesUrl = UriComponentsBuilder.fromHttpUrl(metadataUrl)
+        String citiesUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl())
                 .path(CITIES_PATH)
                 .queryParam("languageCode", "en-gb").toUriString();
         HttpEntity<String> entity = new HttpEntity<>(jsonHeaders);
@@ -44,14 +41,10 @@ public class CitiesProcessor extends BaseProcessor<Cities> {
     }
 
     private void reportCities(Cities cities) {
-        try {
-            HashMap<String, Object> source = new HashMap<>();
-            source.put("searchDate", new Date());
-            source.put("cities", cities.getCities());
-            source.put("citiesCount", cities.getCities().length);
-            elasticClient.index(new IndexRequest("cities", "cities", randomUUID().toString()).source(source));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        HashMap<String, Object> source = new HashMap<>();
+        source.put("searchDate", new Date());
+        source.put("cities", cities.getCities());
+        source.put("citiesCount", cities.getCities().length);
+        elasticClient.report("cities", source);
     }
 }

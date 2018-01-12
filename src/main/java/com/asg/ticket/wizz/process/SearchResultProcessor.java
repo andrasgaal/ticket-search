@@ -1,6 +1,7 @@
 package com.asg.ticket.wizz.process;
 
 import com.asg.ticket.wizz.WhitelistConfig;
+import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.city.City;
 import com.asg.ticket.wizz.dto.city.Connection;
@@ -8,8 +9,6 @@ import com.asg.ticket.wizz.dto.search.request.Flight;
 import com.asg.ticket.wizz.dto.search.request.SearchRequest;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -17,11 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +29,6 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpMethod.POST;
@@ -46,7 +41,7 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
 
     private final ExecutorService executor = newCachedThreadPool();
     private final List<String> searchDates;
-    private String metadataUrl;
+    private Metadata metadata;
     private Cities allCities;
     private String searchUrl;
     private int searchDays;
@@ -62,8 +57,8 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
         this.searchDates = getDates();
     }
 
-    public void setMetadataUrl(String metadataUrl) {
-        this.metadataUrl = metadataUrl;
+    public void setMetadata(Metadata metadataUrl) {
+        this.metadata = metadataUrl;
     }
 
     public void setAllCities(Cities allCities) {
@@ -72,33 +67,33 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
 
     @Override
     public List<SearchResponse> process() {
-        searchUrl = UriComponentsBuilder.fromHttpUrl(metadataUrl).path(SEARCH_PATH).toUriString();
+        searchUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl()).path(SEARCH_PATH).toUriString();
 
         List<Future<SearchResponse>> futureResponses = new ArrayList<>();
         stream(allCities.getCities())
-        .filter(cityNotInWhitelist())
-        .forEach(city -> {
-            Connection[] connections = city.getConnections();
-            stream(connections).filter(connectionNotInWhitelist()).forEach(connection -> searchDates.forEach(date -> {
-                futureResponses.add(executor.submit(() -> getSearchResponse(city.getIata(), connection.getIata(), date)));
-                futureResponses.add(executor.submit(() -> getSearchResponse(connection.getIata(), city.getIata(), date)));
-            }));
-        });
+                .filter(cityNotInWhitelistIfEnabled())
+                .forEach(city -> {
+                    Connection[] connections = city.getConnections();
+                    stream(connections).filter(connectionNotInWhitelistIfEnabled()).forEach(connection -> searchDates.forEach(date -> {
+                        futureResponses.add(executor.submit(() -> getSearchResponse(city.getIata(), connection.getIata(), date)));
+                        futureResponses.add(executor.submit(() -> getSearchResponse(connection.getIata(), city.getIata(), date)));
+                    }));
+                });
 
         List<SearchResponse> searchResponses = collectSearchResponses(futureResponses);
         reportFlights(searchResponses);
         return searchResponses;
     }
 
-    private Predicate<City> cityNotInWhitelist() {
-        return city -> whiteListEnabled && inIataWhiteList(city.getIata());
+    private Predicate<City> cityNotInWhitelistIfEnabled() {
+        return city -> (whiteListEnabled && inIataWhiteList(city.getIata())) || !whiteListEnabled;
     }
 
-    private Predicate<Connection> connectionNotInWhitelist() {
-        return connection -> whiteListEnabled && inIataWhiteList(connection.getIata());
+    private Predicate<Connection> connectionNotInWhitelistIfEnabled() {
+        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
     }
 
-    private boolean inIataWhiteList(String iata){
+    private boolean inIataWhiteList(String iata) {
         return whitelistConfig.getIatas().contains(iata);
     }
 
@@ -143,12 +138,7 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
 
     private void reportFlights(List<SearchResponse> searchResponses) {
         searchResponses.forEach(searchResponse -> {
-            try {
-                elasticClient.index(new IndexRequest("flights", "flights",
-                        randomUUID().toString()).source(GSON.toJson(searchResponse), XContentType.JSON));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            elasticClient.report("flights", GSON.toJson(searchResponse));
         });
     }
 }

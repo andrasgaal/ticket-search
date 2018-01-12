@@ -6,7 +6,6 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -31,7 +30,7 @@ public class Application {
     }
 
     @Bean
-    public RestHighLevelClient elasticClient(){
+    public RestHighLevelClient elasticClient() {
         return new RestHighLevelClient(
                 RestClient.builder(new HttpHost("localhost", 9200, "http")));
     }

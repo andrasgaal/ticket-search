@@ -1,6 +1,6 @@
 package com.asg.ticket.wizz.process;
 
-import com.asg.ticket.wizz.WhitelistConfig;
+import com.asg.ticket.wizz.config.WhitelistConfig;
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.city.City;
@@ -12,14 +12,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
@@ -32,6 +38,7 @@ import static java.util.Optional.of;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.OK;
 
 @Slf4j
 @Component
@@ -65,16 +72,20 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
         this.allCities = allCities;
     }
 
+    private Predicate<Connection> connectionInWhitelistIfEnabled() {
+        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
+    }
+
     @Override
     public List<SearchResponse> process() {
         searchUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl()).path(SEARCH_PATH).toUriString();
 
         List<Future<SearchResponse>> futureResponses = new ArrayList<>();
         stream(allCities.getCities())
-                .filter(cityNotInWhitelistIfEnabled())
+                .filter(cityInWhitelistIfEnabled())
                 .forEach(city -> {
                     Connection[] connections = city.getConnections();
-                    stream(connections).filter(connectionNotInWhitelistIfEnabled()).forEach(connection -> searchDates.forEach(date -> {
+                    stream(connections).filter(connectionInWhitelistIfEnabled()).forEach(connection -> searchDates.forEach(date -> {
                         futureResponses.add(executor.submit(() -> getSearchResponse(city.getIata(), connection.getIata(), date)));
                         futureResponses.add(executor.submit(() -> getSearchResponse(connection.getIata(), city.getIata(), date)));
                     }));
@@ -85,12 +96,8 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
         return searchResponses;
     }
 
-    private Predicate<City> cityNotInWhitelistIfEnabled() {
+    private Predicate<City> cityInWhitelistIfEnabled() {
         return city -> (whiteListEnabled && inIataWhiteList(city.getIata())) || !whiteListEnabled;
-    }
-
-    private Predicate<Connection> connectionNotInWhitelistIfEnabled() {
-        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
     }
 
     private boolean inIataWhiteList(String iata) {
@@ -107,7 +114,9 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
         log.info("Executing search for departureStation={}, arrivalStation={}, date={}",
                 departureStation, arrivalStation, departureDate);
         ResponseEntity<String> response = restTemplate.exchange(searchUrl, POST, entity, String.class);
-        return GSON.fromJson(response.getBody(), SearchResponse.class);
+        SearchResponse searchResponse = GSON.fromJson(response.getBody(), SearchResponse.class);
+        log.info("Received search responses={}", searchResponse);
+        return searchResponse;
     }
 
     private List<String> getDates() {
@@ -130,8 +139,8 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
     private Optional<SearchResponse> safeFutureGet(Future<SearchResponse> searchResponseFuture) {
         try {
             return of(searchResponseFuture.get());
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            log.error("Unable to get search response", ex);
         }
         return empty();
     }
@@ -141,4 +150,5 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
             elasticClient.report("flights", GSON.toJson(searchResponse));
         });
     }
+
 }

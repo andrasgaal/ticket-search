@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz;
+package com.asg.ticket.wizz.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

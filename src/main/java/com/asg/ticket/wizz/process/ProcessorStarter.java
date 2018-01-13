@@ -23,7 +23,7 @@ public class ProcessorStarter {
     @Autowired
     SearchResultProcessor searchResultProcessor;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRateString = "${search.repeatInterval}")
     public void startProcessors() {
         Metadata metadata = metadataProcessor.process();
 
@@ -33,6 +33,6 @@ public class ProcessorStarter {
         searchResultProcessor.setMetadata(metadata);
         searchResultProcessor.setAllCities(cities);
         List<SearchResponse> searchResponses = searchResultProcessor.process();
-        log.info("Received search responses={}", searchResponses);
+        log.info("Search finished", searchResponses);
     }
 }

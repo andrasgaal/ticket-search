@@ -1,10 +1,18 @@
 logging:
   config: classpath:logback-local.xml
 
+custom:
+  rest:
+    connection:
+      connection-request-timeout: 10000
+      connect-timeout: 10000
+      read-timeout: 10000
+
 search:
+  repeatInterval: 3600000 # 1 hour
   days: 1
   whitelist:
-    enabled: true
+    enabled: false
     iatas:
       - BUD
       - LTN

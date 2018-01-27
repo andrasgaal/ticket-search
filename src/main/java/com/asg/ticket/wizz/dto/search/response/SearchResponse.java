@@ -1,17 +1,15 @@
 package com.asg.ticket.wizz.dto.search.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SearchResponse {
 
-    private final Flight[] outboundFlights;
-    private final Flight[] returnFlights;
-    private final String currencyCode;
-
-    public SearchResponse(Flight[] outboundFlights, Flight[] returnFlights, String currencyCode) {
-        this.outboundFlights = outboundFlights;
-        this.returnFlights = returnFlights;
-        this.currencyCode = currencyCode;
-    }
+    private ResponseFlight[] outboundFlights;
+    private ResponseFlight[] returnFlights;
+    private String currencyCode;
 }

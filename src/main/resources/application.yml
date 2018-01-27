@@ -10,7 +10,7 @@ custom:
 
 search:
   repeatInterval: 3600000 # 1 hour
-  days: 1
+  days: 3
   whitelist:
     enabled: false
     iatas:

@@ -1,17 +1,15 @@
 package com.asg.ticket.wizz.dto.city;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class City {
 
-    private final String iata;
-    private final String countryName;
-    private final Connection[] connections;
-
-    public City(String iata, String countryName, Connection[] connections) {
-        this.iata = iata;
-        this.countryName = countryName;
-        this.connections = connections;
-    }
+    private String iata;
+    private String countryName;
+    private Connection[] connections;
 }

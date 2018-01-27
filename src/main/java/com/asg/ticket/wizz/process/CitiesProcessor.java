@@ -8,9 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static org.springframework.http.HttpMethod.GET;
 
 @Slf4j
@@ -42,7 +43,7 @@ public class CitiesProcessor extends BaseProcessor<Cities> {
 
     private void reportCities(Cities cities) {
         HashMap<String, Object> source = new HashMap<>();
-        source.put("searchDate", new Date());
+        source.put("searchDate", LocalDateTime.now().format(ISO_LOCAL_DATE_TIME));
         source.put("cities", cities.getCities());
         source.put("citiesCount", cities.getCities().length);
         elasticClient.report("cities", source);

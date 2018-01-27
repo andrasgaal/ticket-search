@@ -1,21 +1,17 @@
 package com.asg.ticket.wizz.dto.search.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Fare {
 
-    private final Price administrationFeePrice;
-    private final Price basePrice;
-    private final Price discountedPrice;
-    private final Price fullBasePrice;
-    private final Price discountedFarePrice;
-
-    public Fare(Price administrationFeePrice, Price basePrice, Price discountedPrice, Price fullBasePrice, Price discountedFarePrice) {
-        this.administrationFeePrice = administrationFeePrice;
-        this.basePrice = basePrice;
-        this.discountedPrice = discountedPrice;
-        this.fullBasePrice = fullBasePrice;
-        this.discountedFarePrice = discountedFarePrice;
-    }
+    private String bundle;
+    private Price basePrice;
+    private Price discountedPrice;
+    private Price fullBasePrice;
+    private Price discountedFarePrice;
 }

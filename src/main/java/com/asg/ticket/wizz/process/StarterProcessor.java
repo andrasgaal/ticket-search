@@ -1,5 +1,6 @@
 package com.asg.ticket.wizz.process;
 
+import com.asg.ticket.wizz.CurrencyExchangeHolder;
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
@@ -12,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class ProcessorStarter {
+public class StarterProcessor {
 
     @Autowired
     MetadataProcessor metadataProcessor;
@@ -23,8 +24,13 @@ public class ProcessorStarter {
     @Autowired
     SearchResultProcessor searchResultProcessor;
 
+    @Autowired
+    private CurrencyProcessor currencyProcessor;
+
     @Scheduled(fixedRateString = "${search.repeatInterval}")
     public void startProcessors() {
+        CurrencyExchangeHolder currencyExchangeHolder = currencyProcessor.process();
+
         Metadata metadata = metadataProcessor.process();
 
         citiesProcessor.setMetadata(metadata);
@@ -32,6 +38,7 @@ public class ProcessorStarter {
 
         searchResultProcessor.setMetadata(metadata);
         searchResultProcessor.setAllCities(cities);
+        searchResultProcessor.seCurrencyExchange(currencyExchangeHolder);
         List<SearchResponse> searchResponses = searchResultProcessor.process();
         log.info("Search finished", searchResponses);
     }

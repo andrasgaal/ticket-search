@@ -7,9 +7,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
@@ -36,7 +37,7 @@ public class MetadataProcessor extends BaseProcessor<Metadata> {
 
     private void reportMetadata(Metadata metadata) {
         HashMap<String, Object> source = new HashMap<>();
-        source.put("searchDate", new Date());
+        source.put("searchDate", LocalDateTime.now().format(ISO_LOCAL_DATE_TIME));
         source.put("metadata", metadata.getApiUrl());
         elasticClient.report("metadata", source);
     }

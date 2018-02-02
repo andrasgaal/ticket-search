@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.dto.Metadata;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +16,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @Slf4j
 @Component
-public class MetadataProcessor extends BaseProcessor<Metadata> {
+public class MetadataFetcher extends BaseProcessor<Metadata> {
 
     private static final String METADATA_URL = "https://wizzair.com/static/metadata.json";
 
-    @Override
-    public Metadata process() {
+    public Metadata fetchMetadata() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);

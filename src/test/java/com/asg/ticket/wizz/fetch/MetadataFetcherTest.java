@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.dto.Metadata;
 import org.junit.Before;
@@ -19,13 +19,13 @@ import static org.springframework.http.HttpStatus.OK;
 
 
 @RunWith(MockitoJUnitRunner.class)
-public class MetadataProcessorTest extends ProcessorTestBase {
+public class MetadataFetcherTest extends ProcessorTestBase {
 
-    private MetadataProcessor processor;
+    private MetadataFetcher processor;
 
     @Before
     public void setUp() throws Exception {
-        processor = new MetadataProcessor();
+        processor = new MetadataFetcher();
         processor.setElasticClient(elasticClient);
         processor.setRestTemplate(restTemplate);
     }
@@ -37,7 +37,7 @@ public class MetadataProcessorTest extends ProcessorTestBase {
         when(restTemplate.exchange(anyString(), eq(GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(content, OK));
 
-        Metadata metadata = processor.process();
+        Metadata metadata = processor.fetchMetadata();
 
         assertThat(metadata.getApiUrl(), is("https://be.wizzair.com/7.7.1/Api"));
         verify(restTemplate).exchange(contains("metadata"), eq(GET), any(), eq(String.class));

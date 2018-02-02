@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
@@ -16,17 +16,12 @@ import static org.springframework.http.HttpMethod.GET;
 
 @Slf4j
 @Component
-public class CitiesProcessor extends BaseProcessor<Cities> {
+public class CitiesFetcher extends BaseProcessor<Cities> {
 
     private static final String CITIES_PATH = "/asset/map";
-    private Metadata metadata;
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
+    public Cities fetchCities(Metadata metadata) {
 
-    @Override
-    public Cities process() {
         String citiesUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl())
                 .path(CITIES_PATH)
                 .queryParam("languageCode", "en-gb").toUriString();

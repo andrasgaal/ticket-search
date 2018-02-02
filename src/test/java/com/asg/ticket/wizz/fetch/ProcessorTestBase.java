@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.ElasticClient;
 import org.apache.commons.io.IOUtils;

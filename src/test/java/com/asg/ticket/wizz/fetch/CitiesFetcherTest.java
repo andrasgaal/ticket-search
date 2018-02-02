@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
@@ -17,16 +17,15 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 
-public class CitiesProcessorTest extends ProcessorTestBase {
+public class CitiesFetcherTest extends ProcessorTestBase {
 
-    private CitiesProcessor processor;
+    private CitiesFetcher processor;
 
     @Before
     public void setUp() throws Exception {
-        processor = new CitiesProcessor();
+        processor = new CitiesFetcher();
         processor.setElasticClient(elasticClient);
         processor.setRestTemplate(restTemplate);
-        processor.setMetadata(new Metadata("http://someMetadataUrl.com"));
     }
 
     @Test
@@ -36,7 +35,7 @@ public class CitiesProcessorTest extends ProcessorTestBase {
         when(restTemplate.exchange(anyString(), eq(GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(content, OK));
 
-        Cities cities = processor.process();
+        Cities cities = processor.fetchCities(new Metadata("http://someMetadataUrl.com"));
 
         assertNotNull(cities.getCities());
         assertThat(cities.getCities().length, greaterThan(5));

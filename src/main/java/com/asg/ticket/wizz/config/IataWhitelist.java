@@ -8,7 +8,7 @@ import java.util.List;
 
 @Configuration
 @ConfigurationProperties(prefix = "search.whitelist")
-public class WhitelistConfig {
+public class IataWhitelist {
 
     private List<String> iatas = new ArrayList<>();
 

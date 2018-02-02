@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
@@ -22,16 +22,16 @@ import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
-public class SearchResultProcessorTest extends ProcessorTestBase {
+public class FlightsFetcherTest extends ProcessorTestBase {
 
     private static final String BUD_IATA = "BUD";
     private static final String LTN_IATA = "LTN";
 
-    private SearchResultProcessor processor;
+    private FlightsFetcher processor;
 
     @Before
     public void setUp() throws Exception {
-        processor = new SearchResultProcessor(1);
+        processor = new FlightsFetcher(1);
         processor.setElasticClient(elasticClient);
         processor.setRestTemplate(restTemplate);
         processor.setMetadata(new Metadata("http://someMetadataUrl.com"));
@@ -45,7 +45,7 @@ public class SearchResultProcessorTest extends ProcessorTestBase {
         when(restTemplate.exchange(anyString(), eq(POST), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(content, OK));
 
-        List<SearchResponse> searchResult = processor.process();
+        List<SearchResponse> searchResult = processor.fetchFlights(metadata, cities, currencyExchangeHolder);
 
         assertNotNull(searchResult);
         assertThat(searchResult.isEmpty(), is(false));

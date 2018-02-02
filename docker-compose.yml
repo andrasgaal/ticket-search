@@ -11,6 +11,11 @@ services:
     networks: ['ticket-search']
     depends_on: ['elasticsearch']
 
+  mongo:
+    image: mongo
+    ports: ['27017:27017']
+    networks: ['ticket-search']
+
 #  logstash:
 #      image: docker.elastic.co/logstash/logstash:6.1.0
 #      networks: ['stack']

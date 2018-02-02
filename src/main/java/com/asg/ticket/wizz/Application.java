@@ -1,7 +1,7 @@
 package com.asg.ticket.wizz;
 
 import com.asg.ticket.wizz.config.ClientConfiguration;
-import com.asg.ticket.wizz.process.BaseProcessor;
+import com.asg.ticket.wizz.fetch.BaseProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;

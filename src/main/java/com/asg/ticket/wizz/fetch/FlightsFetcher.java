@@ -1,7 +1,9 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.CurrencyExchangeHolder;
-import com.asg.ticket.wizz.config.WhitelistConfig;
+import com.asg.ticket.wizz.CurrencyExchangeUtil.CurrencyExchangeException;
+import com.asg.ticket.wizz.config.IataWhitelist;
+import com.asg.ticket.wizz.dto.Flight;
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.city.City;
@@ -12,6 +14,7 @@ import com.asg.ticket.wizz.dto.search.response.Fare;
 import com.asg.ticket.wizz.dto.search.response.Price;
 import com.asg.ticket.wizz.dto.search.response.ResponseFlight;
 import com.asg.ticket.wizz.dto.search.response.SearchResponse;
+import com.asg.ticket.wizz.repository.FlightRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +26,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -37,52 +45,44 @@ import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpMethod.POST;
 
 @Slf4j
 @Component
-public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
+public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
 
     private static final String SEARCH_PATH = "/search/search";
 
-    private final ExecutorService executor = newCachedThreadPool();
     private final List<String> searchDates;
-    private Metadata metadata;
-    private Cities allCities;
-    private CurrencyExchangeHolder currencyExchangeHolder;
+    private final boolean whiteListEnabled;
+    private ExecutorService executor;
     private String searchUrl;
     private int searchDays;
 
     @Autowired
-    private WhitelistConfig whitelistConfig;
+    private IataWhitelist iataWhitelist;
 
-    @Value("${search.whitelist.enabled}")
-    private boolean whiteListEnabled;
+    @Autowired
+    private FlightRepository flightRepository;
 
-    public SearchResultProcessor(@Value("${search.days}") int searchDays) {
+    public FlightsFetcher(
+            @Value("${search.days}") int searchDays,
+            @Value("${search.threads}") int searchThreadCount,
+            @Value("${search.whitelist.enabled}") boolean whiteListEnabled) {
         this.searchDays = searchDays;
         this.searchDates = getDates();
-    }
-
-    public void setMetadata(Metadata metadataUrl) {
-        this.metadata = metadataUrl;
-    }
-
-    public void setAllCities(Cities allCities) {
-        this.allCities = allCities;
-    }
-
-    public void seCurrencyExchange(CurrencyExchangeHolder currencyExchangeHolder) {
-        this.currencyExchangeHolder = currencyExchangeHolder;
+        this.executor = searchThreadCount == 0 ? newCachedThreadPool() : newFixedThreadPool(searchThreadCount);
+        this.whiteListEnabled = whiteListEnabled;
     }
 
     private Predicate<Connection> connectionInWhitelistIfEnabled() {
         return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
     }
 
-    @Override
-    public List<SearchResponse> process() {
+    public List<SearchResponse> fetchFlights(Metadata metadata, Cities allCities, CurrencyExchangeHolder currencyExchangeHolder) {
         searchUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl()).path(SEARCH_PATH).toUriString();
 
         List<Future<Optional<SearchResponse>>> futureResponses = new ArrayList<>();
@@ -97,7 +97,7 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
                 });
 
         List<SearchResponse> searchResponses = collectSearchResponses(futureResponses);
-        reportSearchResponses(searchResponses);
+        reportSearchResponses(searchResponses, currencyExchangeHolder);
         return searchResponses;
     }
 
@@ -106,7 +106,7 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
     }
 
     private boolean inIataWhiteList(String iata) {
-        return whitelistConfig.getIatas().contains(iata);
+        return iataWhitelist.getIatas().contains(iata);
     }
 
     private Optional<SearchResponse> getSearchResponseFor(String departureStation, String arrivalStation, String departureDate) {
@@ -156,20 +156,48 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
         return empty();
     }
 
-    private void reportSearchResponses(List<SearchResponse> searchResponses) {
+    private void reportSearchResponses(List<SearchResponse> searchResponses, CurrencyExchangeHolder currencyExchangeHolder) {
         searchResponses.forEach(searchResponse -> {
-            ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights();
-            if (outboundFlights != null && outboundFlights.length > 0) {
-                stream(outboundFlights).forEach(reportFlight());
-            }
-            ResponseFlight[] returnFlights = searchResponse.getReturnFlights();
-            if (returnFlights != null && returnFlights.length > 0) {
-                stream(returnFlights).forEach(reportFlight());
-            }
+            ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights() == null ? new ResponseFlight[0] : searchResponse.getOutboundFlights();
+            ResponseFlight[] returnFlights = searchResponse.getReturnFlights() == null ? new ResponseFlight[0] : searchResponse.getReturnFlights();
+            concat(stream(outboundFlights), stream(returnFlights)).forEach(
+                    responseFlight -> persistFlight(responseFlight, currencyExchangeHolder)
+            );
+//            ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights();
+//            if (outboundFlights != null && outboundFlights.length > 0) {
+//                stream(outboundFlights).forEach(reportFlight(currencyExchangeHolder));
+//            }
+//            ResponseFlight[] returnFlights = searchResponse.getReturnFlights();
+//            if (returnFlights != null && returnFlights.length > 0) {
+//                stream(returnFlights).forEach(reportFlight(currencyExchangeHolder));
+//            }
         });
+//        );
     }
 
-    private Consumer<ResponseFlight> reportFlight() {
+    private void persistFlight(ResponseFlight responseFlight, CurrencyExchangeHolder currencyExchangeHolder) {
+        Optional<Fare> basicFare = stream(responseFlight.getFares()).filter(fare -> fare.getBundle().equals("BASIC")).findFirst();
+        if (basicFare.isPresent()) {
+            Price basePriceInLocalCurrency = basicFare.get().getBasePrice();
+            try {
+                LocalDateTime searchDateTime = LocalDateTime.now();
+                LocalDateTime flightDateTime = LocalDateTime.parse(responseFlight.getDepartureDateTime());
+                String departureStation = responseFlight.getDepartureStation();
+                String arrivalStation = responseFlight.getArrivalStation();
+                double priceInHuf = exchangeToHuf(currencyExchangeHolder, basePriceInLocalCurrency);
+                Flight flight = new Flight(UUID.randomUUID().toString(), searchDateTime, flightDateTime, departureStation, arrivalStation, priceInHuf);
+
+                flightRepository.save(flight);
+                log.info("Flight persisted, {}", flight);
+            } catch (CurrencyExchangeException e) {
+                log.error(e.getMessage());
+            }
+        } else {
+            log.error("BASIC bundle not found for flight={}", responseFlight);
+        }
+    }
+
+    private Consumer<ResponseFlight> reportFlight(CurrencyExchangeHolder currencyExchangeHolder) {
         return responseFlight -> {
             Map<String, Object> source = new HashMap<>();
             source.put("searchDate", LocalDateTime.now().format(ISO_LOCAL_DATE_TIME));
@@ -179,8 +207,12 @@ public class SearchResultProcessor extends BaseProcessor<List<SearchResponse>> {
             Optional<Fare> basicFare = stream(responseFlight.getFares()).filter(fare -> fare.getBundle().equals("BASIC")).findFirst();
             if (basicFare.isPresent()) {
                 Price basePriceInLocalCurrency = basicFare.get().getBasePrice();
-                source.put("price", exchangeToHuf(currencyExchangeHolder, basePriceInLocalCurrency));
-                elasticClient.report("flights", source);
+                try {
+                    source.put("price", exchangeToHuf(currencyExchangeHolder, basePriceInLocalCurrency));
+                    elasticClient.report("flights", source);
+                } catch (CurrencyExchangeException e) {
+                    log.error(e.getMessage());
+                }
             } else {
                 log.error("BASIC bundle not found for flight={}", responseFlight);
             }

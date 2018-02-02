@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.ElasticClient;
 import com.google.gson.Gson;
@@ -8,13 +8,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
-
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @Data
 @Component
-public abstract class BaseProcessor<R> {
+public class BaseProcessor<R> {
 
     protected final Gson GSON = new Gson();
     protected final HttpHeaders jsonHeaders = new HttpHeaders();
@@ -23,10 +21,8 @@ public abstract class BaseProcessor<R> {
     @Autowired
     protected ElasticClient elasticClient;
 
-    @PostConstruct
-    private void init() {
+    public BaseProcessor() {
         jsonHeaders.setContentType(APPLICATION_JSON);
     }
 
-    abstract R process();
 }

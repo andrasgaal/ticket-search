@@ -1,4 +1,4 @@
-package com.asg.ticket.wizz.process;
+package com.asg.ticket.wizz.fetch;
 
 import com.asg.ticket.wizz.CurrencyExchangeHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +13,11 @@ import static org.springframework.web.util.UriComponentsBuilder.fromHttpUrl;
 
 @Component
 @Slf4j
-public class CurrencyProcessor extends BaseProcessor<CurrencyExchangeHolder> {
+public class CurrencyExchangeFetcher extends BaseProcessor<CurrencyExchangeHolder> {
 
     private static final String CURRENCY_URL = "https://api.fixer.io/latest";
 
-    @Override
-    CurrencyExchangeHolder process() {
+    CurrencyExchangeHolder fetchCurrencyExchange() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);

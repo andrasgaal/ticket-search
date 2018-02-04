@@ -27,7 +27,7 @@ public class Fetcher {
     @Autowired
     private FlightsFetcher flightsFetcher;
 
-    @Scheduled(fixedRateString = "${search.repeatInterval}")
+    @Scheduled(fixedRateString = "${search.repeatInterval}", initialDelayString = "${search.initialDelay}")
     public void startProcessors() {
         CurrencyExchangeHolder currencyExchangeHolder = currencyExchangeFetcher.fetchCurrencyExchange();
         Metadata metadata = metadataFetcher.fetchMetadata();

@@ -26,12 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -47,7 +42,6 @@ import static java.util.Optional.of;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpMethod.POST;
 
 @Slf4j
@@ -90,10 +84,13 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
                 .filter(cityInWhitelistIfEnabled())
                 .forEach(city -> {
                     Connection[] connections = city.getConnections();
-                    stream(connections).filter(connectionInWhitelistIfEnabled()).forEach(connection -> searchDates.forEach(date -> {
-                        futureResponses.add(executor.submit(() -> getSearchResponseFor(city.getIata(), connection.getIata(), date)));
-                        futureResponses.add(executor.submit(() -> getSearchResponseFor(connection.getIata(), city.getIata(), date)));
-                    }));
+                    stream(connections)
+                            .filter(connectionInWhitelistIfEnabled())
+                            .forEach(connection -> searchDates.forEach(date ->
+                                    futureResponses.add(executor.submit(() ->
+                                            getSearchResponseFor(city.getIata(), connection.getIata(), date)
+                                    ))
+                            ));
                 });
 
         List<SearchResponse> searchResponses = collectSearchResponses(futureResponses);
@@ -159,10 +156,13 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     private void reportSearchResponses(List<SearchResponse> searchResponses, CurrencyExchangeHolder currencyExchangeHolder) {
         searchResponses.forEach(searchResponse -> {
             ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights() == null ? new ResponseFlight[0] : searchResponse.getOutboundFlights();
-            ResponseFlight[] returnFlights = searchResponse.getReturnFlights() == null ? new ResponseFlight[0] : searchResponse.getReturnFlights();
-            concat(stream(outboundFlights), stream(returnFlights)).forEach(
-                    responseFlight -> persistFlight(responseFlight, currencyExchangeHolder)
-            );
+//            ResponseFlight[] returnFlights = searchResponse.getReturnFlights() == null ? new ResponseFlight[0] : searchResponse.getReturnFlights();
+//            concat(
+            stream(outboundFlights)
+//                    , stream(returnFlights))
+                    .forEach(
+                            responseFlight -> persistFlight(responseFlight, currencyExchangeHolder)
+                    );
 //            ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights();
 //            if (outboundFlights != null && outboundFlights.length > 0) {
 //                stream(outboundFlights).forEach(reportFlight(currencyExchangeHolder));

@@ -1,5 +1,6 @@
 package com.asg.ticket.wizz.fetch;
 
+import com.asg.ticket.wizz.CurrencyExchangeHolder;
 import com.asg.ticket.wizz.dto.Metadata;
 import com.asg.ticket.wizz.dto.city.Cities;
 import com.asg.ticket.wizz.dto.city.City;
@@ -9,7 +10,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
@@ -27,15 +30,13 @@ public class FlightsFetcherTest extends ProcessorTestBase {
     private static final String BUD_IATA = "BUD";
     private static final String LTN_IATA = "LTN";
 
-    private FlightsFetcher processor;
+    private FlightsFetcher flightsFetcher;
 
     @Before
     public void setUp() throws Exception {
-        processor = new FlightsFetcher(1);
-        processor.setElasticClient(elasticClient);
-        processor.setRestTemplate(restTemplate);
-        processor.setMetadata(new Metadata("http://someMetadataUrl.com"));
-        processor.setAllCities(createCities());
+        flightsFetcher = new FlightsFetcher(1, 1, false);
+        flightsFetcher.setElasticClient(elasticClient);
+        flightsFetcher.setRestTemplate(restTemplate);
     }
 
     @Test
@@ -45,7 +46,8 @@ public class FlightsFetcherTest extends ProcessorTestBase {
         when(restTemplate.exchange(anyString(), eq(POST), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(content, OK));
 
-        List<SearchResponse> searchResult = processor.fetchFlights(metadata, cities, currencyExchangeHolder);
+        List<SearchResponse> searchResult = flightsFetcher.fetchFlights(new Metadata("http://someMetadataUrl.com"),
+                createCities(), createCurrencyExchange());
 
         assertNotNull(searchResult);
         assertThat(searchResult.isEmpty(), is(false));
@@ -60,6 +62,12 @@ public class FlightsFetcherTest extends ProcessorTestBase {
                 new City(BUD_IATA, "Hungary", budToLtn),
                 new City(LTN_IATA, "United Kingdom", ltnToBud)};
         return new Cities(cities);
+    }
+
+    private CurrencyExchangeHolder createCurrencyExchange() {
+        Map<String, Double> rates = new HashMap<>();
+        rates.put("GBP", 0.0025);
+        return new CurrencyExchangeHolder("HUF", "someDate", rates);
     }
 
 }

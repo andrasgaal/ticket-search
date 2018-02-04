@@ -8,12 +8,18 @@ custom:
       connect-timeout: 10000
       read-timeout: 10000
 
+spring:
+  data:
+    mongodb:
+      database: "wizz"
+
 search:
   threads: 10 # 0 to unlimited
   repeatInterval: 3600000 # 1 hour
-  days: 3
+  initialDelay: 0
+  days: 2
   whitelist:
-    enabled: true
+    enabled: false
     iatas:
       - BUD
       - LTN

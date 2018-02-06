@@ -156,23 +156,11 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     private void reportSearchResponses(List<SearchResponse> searchResponses, CurrencyExchangeHolder currencyExchangeHolder) {
         searchResponses.forEach(searchResponse -> {
             ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights() == null ? new ResponseFlight[0] : searchResponse.getOutboundFlights();
-//            ResponseFlight[] returnFlights = searchResponse.getReturnFlights() == null ? new ResponseFlight[0] : searchResponse.getReturnFlights();
-//            concat(
             stream(outboundFlights)
-//                    , stream(returnFlights))
                     .forEach(
                             responseFlight -> persistFlight(responseFlight, currencyExchangeHolder)
                     );
-//            ResponseFlight[] outboundFlights = searchResponse.getOutboundFlights();
-//            if (outboundFlights != null && outboundFlights.length > 0) {
-//                stream(outboundFlights).forEach(reportFlight(currencyExchangeHolder));
-//            }
-//            ResponseFlight[] returnFlights = searchResponse.getReturnFlights();
-//            if (returnFlights != null && returnFlights.length > 0) {
-//                stream(returnFlights).forEach(reportFlight(currencyExchangeHolder));
-//            }
         });
-//        );
     }
 
     private void persistFlight(ResponseFlight responseFlight, CurrencyExchangeHolder currencyExchangeHolder) {

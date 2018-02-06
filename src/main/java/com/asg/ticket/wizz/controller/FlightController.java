@@ -19,9 +19,8 @@ public class FlightController {
     @Autowired
     private FlightRepository flightRepository;
 
-    @GetMapping("/getFlights")
+    @GetMapping("/flights")
     public List<Flight> getFlights(@RequestParam String departureStation, @RequestParam String arrivalStation, @RequestParam String flightDate) {
-//        return flightRepository.getFlights(departureStation, arrivalStation, LocalDate.parse(flightDate, ISO_DATE).atStartOfDay());
         LocalDate localFlightDate = parse(flightDate, ISO_DATE);
         return flightRepository.getFlights(departureStation, arrivalStation, localFlightDate.atStartOfDay(), localFlightDate.plusDays(1).atStartOfDay());
     }

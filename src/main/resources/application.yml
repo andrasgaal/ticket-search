@@ -16,7 +16,7 @@ spring:
 search:
   threads: 10 # 0 to unlimited
   repeatInterval: 3600000 # 1 hour
-  initialDelay: 0
+  initialDelay: 3600000
   days: 2
   whitelist:
     enabled: false

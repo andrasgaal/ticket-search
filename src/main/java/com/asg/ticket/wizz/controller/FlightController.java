@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import static java.time.LocalDate.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
@@ -23,5 +24,10 @@ public class FlightController {
     public List<Flight> getFlights(@RequestParam String departureStation, @RequestParam String arrivalStation, @RequestParam String flightDate) {
         LocalDate localFlightDate = parse(flightDate, ISO_DATE);
         return flightRepository.getFlights(departureStation, arrivalStation, localFlightDate.atStartOfDay(), localFlightDate.plusDays(1).atStartOfDay());
+    }
+
+    @GetMapping("/iatas")
+    public Set<String> getIatas() {
+        return flightRepository.getIatas();
     }
 }

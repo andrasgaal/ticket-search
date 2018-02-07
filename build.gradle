@@ -37,9 +37,11 @@ dependencies {
 //    compile('org.springframework.boot:spring-boot-starter-thymeleaf')
 //    compile('org.springframework.boot:spring-boot-starter-webflux')
 //    compile 'org.projectreactor:reactor-spring:1.0.1.RELEASE'
-    compile("org.springframework.boot:spring-boot-starter-web")
-    compile('org.springframework.boot:spring-boot-starter-thymeleaf')
-    compile("org.springframework.boot:spring-boot-starter-data-mongodb")
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-thymeleaf:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-devtools:${springBootVersion}")
+
     compile group: 'com.google.code.gson', name: 'gson', version: '2.3.1'
     compile group: 'org.projectlombok', name: 'lombok', version: '1.16.18'
     compile group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'

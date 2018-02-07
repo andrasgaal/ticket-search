@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface FlightRepository extends MongoRepository<Flight, String>{
+public interface FlightRepository extends MongoRepository<Flight, String>, CustomFlightRepository{
 
     @Query(value="{ 'departureStation' : ?0, 'arrivalStation' : ?1, 'flightDateTime' : {$gte: ?2, $lt: ?3}}")
     List<Flight> getFlights(String departureIata, String arrivalIata, LocalDateTime flightDateStartOfDay, LocalDateTime flightDateEndOfDay);

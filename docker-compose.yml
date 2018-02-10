@@ -1,15 +1,15 @@
 version: "2"
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.1.0
-    ports: ['9200:9200']
-    networks: ['ticket-search']
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:6.1.0
-    ports: ['5601:5601']
-    networks: ['ticket-search']
-    depends_on: ['elasticsearch']
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:6.1.0
+#    ports: ['9200:9200']
+#    networks: ['ticket-search']
+#
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:6.1.0
+#    ports: ['5601:5601']
+#    networks: ['ticket-search']
+#    depends_on: ['elasticsearch']
 
   mongo:
     image: mongo

@@ -1,9 +1,17 @@
 class PriceDiagram extends React.Component {
     constructor() {
         super();
+        let todayIso = new Date().toISOString();
+        let today = todayIso.substring(0, todayIso.indexOf("T"));
         this.state = {
-            iatas: []
-        }
+            iatas: [],
+            departureStation: "BUD",
+            arrivalStation: "LTN",
+            flightDate: today
+        };
+        this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
+        this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
+        this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
     }
 
     componentDidMount(){
@@ -19,14 +27,26 @@ class PriceDiagram extends React.Component {
         });
     }
 
+    handleDepartureStationChange(iata) {
+        this.setState({"departureStation": iata});
+    }
+
+    handleArrivalStationChange(iata) {
+        this.setState({"arrivalStation": iata});
+    }
+
+    handleFlightDateChange(date){
+        this.setState({"flightDate": date});
+    }
+
     render(){
         return (
             <div>
-                <Dropdown iatas={this.state.iatas} station={"departure"} defaultIata={"BUD"} labelText={"From"}/>
+                <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation} labelText={"From"} onStationChange={this.handleDepartureStationChange}/>
                 <div className="separator"/>
-                <Dropdown iatas={this.state.iatas} station={"arrival"} defaultIata={"LTN"} labelText={"To"}/>
+                <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation} labelText={"To"} onStationChange={this.handleArrivalStationChange}/>
                 <div className="separator"/>
-                <DatePicker/>
+                <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
                 <div className="separator"/>
                 <UpdateButton/>
             </div>
@@ -37,11 +57,10 @@ class PriceDiagram extends React.Component {
 class Dropdown extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {chosenIata : this.props.defaultIata}
     }
 
-    handleClick(iata) {
-        this.setState({chosenIata: iata})
+    handleIataChange(iata) {
+        this.props.onStationChange(iata)
     }
 
     render(){
@@ -50,7 +69,7 @@ class Dropdown extends React.Component {
         let self = this;
         let dropdownMenuElements = [];
         this.props.iatas.forEach(function (iata) {
-            dropdownMenuElements.push(<DropdownMenuElement key={iata} iata={iata} onClick={() => self.handleClick(iata)}/>);
+            dropdownMenuElements.push(<DropdownMenuElement key={iata} iata={iata} onClick={() => self.handleIataChange(iata)}/>);
         });
 
         return (
@@ -58,7 +77,7 @@ class Dropdown extends React.Component {
                 <label htmlFor={station +"-station-dropdown-button"}>{this.props.labelText}</label>
                 <div className="dropdown">
                     <button className="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" id={station +"-station-dropdown-button"}>
-                        {this.state.chosenIata}
+                        {this.props.chosenIata}
                     </button>
                     <ul id={station +"-station-dropdown"} className="dropdown-menu pointer">
                         {dropdownMenuElements}
@@ -78,8 +97,8 @@ class DatePicker extends React.Component {
         super();
     }
 
-    componentDidMount(){
-        document.getElementById("flight-date").valueAsDate = new Date()
+    handleFlightDateChange(){
+        //TODO
     }
 
     render() {
@@ -87,7 +106,7 @@ class DatePicker extends React.Component {
             <div>
                 <label htmlFor="flight-date">Flight date</label>
                 <div>
-                    <input id="flight-date" type="date"/>
+                    <input id="flight-date" type="date" defaultValue={this.props.flightDate} onChange={this.handleFlightDateChange}/>
                 </div>
             </div>
         )
@@ -100,8 +119,6 @@ class UpdateButton extends React.Component{
     }
 
     updateDiagram() {
-        let departureStation = $("#departure-station-dropdown-button").text();
-        let arrivalStation = $("#arrival-station-dropdown-button").text();
         let flightDate = $("#flight-date").val();
         $.ajax({
             url: "http://localhost:8080/flights?departureStation="+departureStation+"&arrivalStation="+arrivalStation+"&flightDate="+flightDate

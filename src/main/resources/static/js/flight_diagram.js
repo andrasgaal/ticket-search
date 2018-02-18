@@ -7,18 +7,20 @@ class PriceDiagram extends React.Component {
             iatas: [],
             departureStation: "BUD",
             arrivalStation: "LTN",
-            flightDate: today
+            flightDate: today,
+            flights: []
         };
         this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
         this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
         this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
+        this.handleFlighs = this.handleFlighs.bind(this);
     }
 
-    componentDidMount(){
+    componentDidMount() {
         this.getIatas();
     }
 
-    getIatas(){
+    getIatas() {
         let self = this;
         $.ajax({
             url: "http://localhost:8080/iatas"
@@ -35,20 +37,32 @@ class PriceDiagram extends React.Component {
         this.setState({"arrivalStation": iata});
     }
 
-    handleFlightDateChange(date){
+    handleFlightDateChange(date) {
         this.setState({"flightDate": date});
     }
 
-    render(){
+    handleFlighs(flights) {
+        this.setState({"flights": flights});
+    }
+
+    render() {
         return (
             <div>
-                <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation} labelText={"From"} onStationChange={this.handleDepartureStationChange}/>
-                <div className="separator"/>
-                <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation} labelText={"To"} onStationChange={this.handleArrivalStationChange}/>
-                <div className="separator"/>
-                <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
-                <div className="separator"/>
-                <UpdateButton/>
+                <div className="block">
+                    <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation}
+                              labelText={"From"} onStationChange={this.handleDepartureStationChange}/>
+                    <div className="separator"/>
+                    <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation}
+                              labelText={"To"} onStationChange={this.handleArrivalStationChange}/>
+                    <div className="separator"/>
+                    <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
+                    <div className="separator"/>
+                    <UpdateButton departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation}
+                                  flightDate={this.state.flightDate} onFlightsChange={this.handleFlighs}/>
+                </div>
+                <div className="block">
+                    <Diagram departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation} flights={this.state.flights}/>
+                </div>
             </div>
         );
     }
@@ -63,23 +77,25 @@ class Dropdown extends React.Component {
         this.props.onStationChange(iata)
     }
 
-    render(){
+    render() {
         let station = this.props.station;
 
         let self = this;
         let dropdownMenuElements = [];
         this.props.iatas.forEach(function (iata) {
-            dropdownMenuElements.push(<DropdownMenuElement key={iata} iata={iata} onClick={() => self.handleIataChange(iata)}/>);
+            dropdownMenuElements.push(<DropdownMenuElement key={iata} iata={iata}
+                                                           onClick={() => self.handleIataChange(iata)}/>);
         });
 
         return (
             <div>
-                <label htmlFor={station +"-station-dropdown-button"}>{this.props.labelText}</label>
+                <label htmlFor={station + "-station-dropdown-button"}>{this.props.labelText}</label>
                 <div className="dropdown">
-                    <button className="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" id={station +"-station-dropdown-button"}>
+                    <button className="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown"
+                            id={station + "-station-dropdown-button"}>
                         {this.props.chosenIata}
                     </button>
-                    <ul id={station +"-station-dropdown"} className="dropdown-menu pointer">
+                    <ul id={station + "-station-dropdown"} className="dropdown-menu pointer">
                         {dropdownMenuElements}
                     </ul>
                 </div>
@@ -88,17 +104,18 @@ class Dropdown extends React.Component {
     }
 }
 
-function DropdownMenuElement(props){
+function DropdownMenuElement(props) {
     return (<li className="dropdown-item" onClick={props.onClick}>{props.iata}</li>);
 }
 
 class DatePicker extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
+        this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
     }
 
-    handleFlightDateChange(){
-        //TODO
+    handleFlightDateChange(event) {
+        this.props.onFlightDateChange(event.target.value)
     }
 
     render() {
@@ -106,40 +123,74 @@ class DatePicker extends React.Component {
             <div>
                 <label htmlFor="flight-date">Flight date</label>
                 <div>
-                    <input id="flight-date" type="date" defaultValue={this.props.flightDate} onChange={this.handleFlightDateChange}/>
+                    <input id="flight-date" type="date" defaultValue={this.props.flightDate}
+                           onChange={this.handleFlightDateChange}/>
                 </div>
             </div>
         )
     }
 }
 
-class UpdateButton extends React.Component{
-    constructor(){
-        super();
+class UpdateButton extends React.Component {
+    constructor(props) {
+        super(props);
+        this.updateDiagram = this.updateDiagram.bind(this);
     }
 
     updateDiagram() {
-        let flightDate = $("#flight-date").val();
+        let self = this;
         $.ajax({
-            url: "http://localhost:8080/flights?departureStation="+departureStation+"&arrivalStation="+arrivalStation+"&flightDate="+flightDate
-        }).done(function (data) {
-            console.log(data);
-            $("#diagram-data").text(data)
+            url: "http://localhost:8080/flights?departureStation=" + this.props.departureStation
+             + "&arrivalStation=" + this.props.arrivalStation + "&flightDate=" + this.props.flightDate
+        }).done(function (flights) {
+            self.props.onFlightsChange(flights)
         });
     }
 
     render() {
         return (
-            <div>
-                <button className="btn btn-primary" type="button" onClick={() => this.updateDiagram()}>Update</button>
-                <div className="separator"/>
-                <div id="diagram-data"></div>
-            </div>
+            <button className="btn btn-primary" type="button" onClick={this.updateDiagram}>Update</button>
         )
     }
 }
 
+class Diagram extends React.Component {
+    constructor(props){
+        super(props)
+    }
+
+    componentDidUpdate(){
+        tippy('[title]');
+    }
+
+    render(){
+        let diagramElements = [];
+        let flights = this.props.flights;
+        let maxPrice = Math.max(...flights.map(flight => flight.priceInHuf));
+        flights.forEach(function (flight) {
+            let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
+            diagramElements.push(<DiagramElement key={flight.id}
+                                                 flightDateTime={flight.flightDateTime}
+                                                 priceInHuf={flight.priceInHuf}
+                                                 pricePercentage={pricePercentage}/>);
+        });
+        return(
+            <div>
+                <div className="diagramTitle">From {this.props.departureStation} to {this.props.arrivalStation}</div>
+                <div className="diagramBody">
+                    <div>{diagramElements}</div>
+                </div>
+            </div>
+
+        )
+    }
+}
+
+function DiagramElement(props) {
+    return (<div className="diagramElement bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>)
+}
+
 ReactDOM.render(
     <PriceDiagram/>
-    ,document.getElementById('price-diagram')
+    , document.getElementById('price-diagram')
 );

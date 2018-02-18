@@ -27,13 +27,14 @@ public class Fetcher {
     @Autowired
     private FlightsFetcher flightsFetcher;
 
-    @Scheduled(fixedRateString = "${search.repeatInterval}", initialDelayString = "${search.initialDelay}")
+//    @Scheduled(fixedRateString = "${search.repeatInterval}", initialDelayString = "${search.initialDelay}")
+    @Scheduled(cron = "${search.cronScheadule}")
     public void startProcessors() {
         CurrencyExchangeHolder currencyExchangeHolder = currencyExchangeFetcher.fetchCurrencyExchange();
         Metadata metadata = metadataFetcher.fetchMetadata();
         Cities cities = citiesFetcher.fetchCities(metadata);
         List<SearchResponse> searchResponses = flightsFetcher.fetchFlights(metadata, cities, currencyExchangeHolder);
 
-        log.info("Search finished", searchResponses);
+        log.info("Search finished, stored {} flights", searchResponses.size());
     }
 }

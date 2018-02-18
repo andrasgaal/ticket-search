@@ -9,3 +9,24 @@ label {
 .separator {
     height: 50px;
 }
+
+.block {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.diagramTitle {
+    font-weight: bold;
+    font-size: large;
+}
+
+.diagramBody {
+
+}
+
+.diagramElement {
+    width: 15px;
+    display: inline-block;
+    margin: 1px;
+    border: 1px solid;
+}

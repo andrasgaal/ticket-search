@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.asg.ticket.wizz.CurrencyExchangeUtil.exchangeToHuf;
 import static java.lang.String.valueOf;
@@ -73,23 +74,25 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     public List<SearchResponse> fetchFlights(Metadata metadata, Cities allCities, CurrencyExchangeHolder currencyExchangeHolder) {
         searchUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl()).path(SEARCH_PATH).toUriString();
 
-        List<Future<Optional<SearchResponse>>> futureResponses = new ArrayList<>();
-        stream(allCities.getCities())
+        List<Future<Optional<SearchResponse>>> futureResponses = stream(allCities.getCities())
                 .filter(cityInWhitelistIfEnabled())
-                .forEach(city -> {
-                    Connection[] connections = city.getConnections();
-                    stream(connections)
-                            .filter(connectionInWhitelistIfEnabled())
-                            .forEach(connection -> searchDates.forEach(date ->
-                                    futureResponses.add(executor.submit(() ->
-                                            getSearchResponseFor(city.getIata(), connection.getIata(), date)
-                                    ))
-                            ));
-                });
+                .flatMap(this::futureSearchResponsesForCity)
+                .collect(toList());
 
         List<SearchResponse> searchResponses = collectSearchResponses(futureResponses);
         reportSearchResponses(searchResponses, currencyExchangeHolder);
         return searchResponses;
+    }
+
+    private Stream<? extends Future<Optional<SearchResponse>>> futureSearchResponsesForCity(City city) {
+        return stream(city.getConnections())
+                .filter(connectionInWhitelistIfEnabled())
+                .flatMap(connection -> futureSearchResponseForRoute(city, connection));
+    }
+
+    private Stream<Future<Optional<SearchResponse>>> futureSearchResponseForRoute(City city, Connection connection) {
+        return searchDates.stream()
+                .map(date -> executor.submit(() -> futureSearchResponseForFlight(city.getIata(), connection.getIata(), date)));
     }
 
     private Predicate<City> cityInWhitelistIfEnabled() {
@@ -100,7 +103,7 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
         return connection -> !iataWhitelist.getConnections().isEnabled() || iataWhitelist.getConnections().getIatas().contains(connection.getIata());
     }
 
-    private Optional<SearchResponse> getSearchResponseFor(String departureStation, String arrivalStation, String departureDate) {
+    private Optional<SearchResponse> futureSearchResponseForFlight(String departureStation, String arrivalStation, String departureDate) {
         RequestFlight[] requestFlights = {
                 new RequestFlight(departureStation, arrivalStation, departureDate)};
 

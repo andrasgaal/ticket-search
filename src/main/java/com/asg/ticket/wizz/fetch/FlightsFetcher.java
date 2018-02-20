@@ -55,15 +55,16 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     private String searchUrl;
     private int searchDays;
 
-    @Autowired
+    private FlightRepository flightRepository;
     private IataWhitelist iataWhitelist;
 
-    @Autowired
-    private FlightRepository flightRepository;
-
     public FlightsFetcher(
+            @Autowired FlightRepository flightRepository,
+            @Autowired IataWhitelist iataWhitelist,
             @Value("${search.days}") int searchDays,
             @Value("${search.threads}") int searchThreadCount) {
+        this.flightRepository = flightRepository;
+        this.iataWhitelist = iataWhitelist;
         this.searchDays = searchDays;
         this.searchDates = getDates();
         this.executor = searchThreadCount == 0 ? newCachedThreadPool() : newFixedThreadPool(searchThreadCount);
@@ -92,18 +93,12 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     }
 
     private Predicate<City> cityInWhitelistIfEnabled() {
-//        return city -> (whiteListEnabled && inIataWhiteList(city.getIata())) || !whiteListEnabled;
-        return city -> !iataWhitelist.getCities().isEnabled() || iataWhitelist.getCities().getIatas().contains(city);
+        return city -> !iataWhitelist.getCities().isEnabled() || iataWhitelist.getCities().getIatas().contains(city.getIata());
     }
 
     private Predicate<Connection> connectionInWhitelistIfEnabled() {
-//        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
-        return connection -> !iataWhitelist.getConnections().isEnabled() || iataWhitelist.getConnections().getIatas().contains(connection);
+        return connection -> !iataWhitelist.getConnections().isEnabled() || iataWhitelist.getConnections().getIatas().contains(connection.getIata());
     }
-
-//    private boolean inIataWhiteList(String iata) {
-//        return iataWhitelist.getIatas().contains(iata);
-//    }
 
     private Optional<SearchResponse> getSearchResponseFor(String departureStation, String arrivalStation, String departureDate) {
         RequestFlight[] requestFlights = {

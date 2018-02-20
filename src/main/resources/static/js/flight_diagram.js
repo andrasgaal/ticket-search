@@ -176,18 +176,22 @@ class Diagram extends React.Component {
         });
         return(
             <div>
-                <div className="diagramTitle">From {this.props.departureStation} to {this.props.arrivalStation}</div>
-                <div className="diagramBody">
+                <div className="diagram-title">From {this.props.departureStation} to {this.props.arrivalStation}</div>
+                <div className="diagram-body">
                     <div>{diagramElements}</div>
                 </div>
             </div>
-
         )
     }
 }
 
 function DiagramElement(props) {
-    return (<div className="diagramElement bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>)
+    return (
+        <div className="diagram-element">
+            <div className="diagram-element-column bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>
+            <div className="diagram-element-date">{props.flightDateTime}</div>
+        </div>
+    )
 }
 
 ReactDOM.render(

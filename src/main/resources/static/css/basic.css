@@ -15,18 +15,26 @@ label {
     vertical-align: top;
 }
 
-.diagramTitle {
+.diagram-title {
     font-weight: bold;
     font-size: large;
 }
 
-.diagramBody {
+.diagram-body {
 
 }
 
-.diagramElement {
-    width: 15px;
+.diagram-element {
+    width: 20px;
     display: inline-block;
-    margin: 1px;
+}
+
+.diagram-element-column{
+    margin: 2px;
     border: 1px solid;
+}
+
+.diagram-element-date{
+    transform: rotate(90deg);
+    white-space: nowrap;
 }

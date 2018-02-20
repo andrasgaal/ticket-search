@@ -34,7 +34,7 @@ public class FlightsFetcherTest extends ProcessorTestBase {
 
     @Before
     public void setUp() throws Exception {
-        flightsFetcher = new FlightsFetcher(1, 1, false);
+        flightsFetcher = new FlightsFetcher(1, 1);
         flightsFetcher.setElasticClient(elasticClient);
         flightsFetcher.setRestTemplate(restTemplate);
     }

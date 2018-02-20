@@ -10,9 +10,55 @@ import java.util.List;
 @ConfigurationProperties(prefix = "search.whitelist")
 public class IataWhitelist {
 
-    private List<String> iatas = new ArrayList<>();
+    private final Cities cities = new Cities();
 
-    public List<String> getIatas() {
-        return iatas;
+    private final Connections connections = new Connections();
+
+    public Cities getCities() {
+        return cities;
     }
+
+    public Connections getConnections() {
+        return connections;
+    }
+
+
+    public static class Cities {
+
+        private boolean enabled;
+
+        private List<String> iatas = new ArrayList<>();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public List<String> getIatas() {
+            return iatas;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    public static class Connections {
+
+        private boolean enabled;
+
+        private List<String> iatas = new ArrayList<>();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public List<String> getIatas() {
+            return iatas;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
 }

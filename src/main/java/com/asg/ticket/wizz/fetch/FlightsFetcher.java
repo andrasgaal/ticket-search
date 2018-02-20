@@ -26,12 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -47,7 +42,6 @@ import static java.util.Optional.of;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpMethod.POST;
 
 @Slf4j
@@ -57,7 +51,6 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     private static final String SEARCH_PATH = "/search/search";
 
     private final List<String> searchDates;
-    private final boolean whiteListEnabled;
     private ExecutorService executor;
     private String searchUrl;
     private int searchDays;
@@ -70,16 +63,10 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
 
     public FlightsFetcher(
             @Value("${search.days}") int searchDays,
-            @Value("${search.threads}") int searchThreadCount,
-            @Value("${search.whitelist.enabled}") boolean whiteListEnabled) {
+            @Value("${search.threads}") int searchThreadCount) {
         this.searchDays = searchDays;
         this.searchDates = getDates();
         this.executor = searchThreadCount == 0 ? newCachedThreadPool() : newFixedThreadPool(searchThreadCount);
-        this.whiteListEnabled = whiteListEnabled;
-    }
-
-    private Predicate<Connection> connectionInWhitelistIfEnabled() {
-        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
     }
 
     public List<SearchResponse> fetchFlights(Metadata metadata, Cities allCities, CurrencyExchangeHolder currencyExchangeHolder) {
@@ -105,12 +92,18 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
     }
 
     private Predicate<City> cityInWhitelistIfEnabled() {
-        return city -> (whiteListEnabled && inIataWhiteList(city.getIata())) || !whiteListEnabled;
+//        return city -> (whiteListEnabled && inIataWhiteList(city.getIata())) || !whiteListEnabled;
+        return city -> !iataWhitelist.getCities().isEnabled() || iataWhitelist.getCities().getIatas().contains(city);
     }
 
-    private boolean inIataWhiteList(String iata) {
-        return iataWhitelist.getIatas().contains(iata);
+    private Predicate<Connection> connectionInWhitelistIfEnabled() {
+//        return connection -> (whiteListEnabled && inIataWhiteList(connection.getIata())) || !whiteListEnabled;
+        return connection -> !iataWhitelist.getConnections().isEnabled() || iataWhitelist.getConnections().getIatas().contains(connection);
     }
+
+//    private boolean inIataWhiteList(String iata) {
+//        return iataWhitelist.getIatas().contains(iata);
+//    }
 
     private Optional<SearchResponse> getSearchResponseFor(String departureStation, String arrivalStation, String departureDate) {
         RequestFlight[] requestFlights = {

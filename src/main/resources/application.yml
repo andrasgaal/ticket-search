@@ -18,7 +18,7 @@ search:
 #  repeatInterval: 3600000 # 1 hour
 #  initialDelay: 3600000
 #  cronScheadule: "0 0 0,6,12,18 * * *" # every day at 0:00 6:00 12:00 18:00
-  cronScheadule: "0 10 22 * * *"
+  cronScheadule: "0 0/15 * * * *"
   days: 5
   whitelist:
     cities:

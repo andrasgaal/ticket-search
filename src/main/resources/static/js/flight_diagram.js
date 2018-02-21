@@ -8,8 +8,8 @@ class PriceDiagram extends React.Component {
             departureStation: "BUD",
             arrivalStation: "LTN",
             flightDate: today,
-            flights: []
-        };
+            flights: {}
+        }
         this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
         this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
         this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
@@ -137,10 +137,14 @@ class UpdateButton extends React.Component {
         this.updateDiagram = this.updateDiagram.bind(this);
     }
 
+    // componentDidUpdate(){
+    //     this.updateDiagram()
+    // }
+
     updateDiagram() {
         let self = this;
         $.ajax({
-            url: "http://localhost:8080/flights?departureStation=" + this.props.departureStation
+            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.props.departureStation
              + "&arrivalStation=" + this.props.arrivalStation + "&flightDate=" + this.props.flightDate
         }).done(function (flights) {
             self.props.onFlightsChange(flights)
@@ -166,14 +170,23 @@ class Diagram extends React.Component {
     render(){
         let diagramElements = [];
         let flights = this.props.flights;
-        let maxPrice = Math.max(...flights.map(flight => flight.priceInHuf));
-        flights.forEach(function (flight) {
-            let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
-            diagramElements.push(<DiagramElement key={flight.id}
-                                                 flightDateTime={flight.flightDateTime}
-                                                 priceInHuf={flight.priceInHuf}
-                                                 pricePercentage={pricePercentage}/>);
-        });
+        if(!$.isEmptyObject(flights)) {
+            var maxPrice = 0;
+            for (var key in flights){
+                if(flights[key].priceInHuf > maxPrice){
+                    maxPrice = flights[key].priceInHuf;
+                }
+            }
+
+            for(var searchDate in flights) {
+                let flight = flights[searchDate];
+                let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
+                diagramElements.push(<DiagramElement key={flight.id}
+                                                     searchDateTime={searchDate}
+                                                     priceInHuf={flight.priceInHuf}
+                                                     pricePercentage={pricePercentage}/>);
+            }
+        }
         return(
             <div>
                 <div className="diagram-title">From {this.props.departureStation} to {this.props.arrivalStation}</div>
@@ -189,7 +202,7 @@ function DiagramElement(props) {
     return (
         <div className="diagram-element">
             <div className="diagram-element-column bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>
-            <div className="diagram-element-date">{props.flightDateTime}</div>
+            <div className="diagram-element-date">{props.searchDateTime}</div>
         </div>
     )
 }

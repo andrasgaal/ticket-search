@@ -30,14 +30,14 @@ public class FlightController {
     public Map<LocalDate, Flight> getFlightsGroupBySearchDate(@RequestParam String departureStation, @RequestParam String arrivalStation, @RequestParam String flightDate) {
         List<Flight> flights = getFlights(departureStation, arrivalStation, flightDate);
 
-        return flights.stream().collect(toMap(
+        return new TreeMap<>(flights.stream().collect(toMap(
                 flght -> flght.getSearchDateTime().toLocalDate(),
                 flight -> flight,
                 (flight1, flight2) -> {
                     double roundernAvgPrice = Double.valueOf((flight1.getPriceInHuf() + flight2.getPriceInHuf()) / 2).intValue();
                     return new Flight(flight1.getId(), flight1.getSearchDateTime(), flight1.getFlightDateTime(), flight1.getDepartureStation(),
                             flight1.getArrivalStation(), roundernAvgPrice);
-                }
+                })
         ));
     }
 

@@ -126,7 +126,7 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
 
     private List<String> getDates() {
         ArrayList<String> dates = new ArrayList<>();
-        for (int daysFromNow = 0; daysFromNow < searchDays; daysFromNow++) {
+        for (int daysFromNow = 0; daysFromNow <= searchDays; daysFromNow++) {
             dates.add(LocalDate.now().plusDays(daysFromNow).format(ISO_LOCAL_DATE));
         }
 

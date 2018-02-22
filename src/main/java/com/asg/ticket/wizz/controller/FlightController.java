@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.time.LocalDate.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
@@ -45,6 +43,6 @@ public class FlightController {
 
     @GetMapping("/iatas")
     public Set<String> getIatas() {
-        return flightRepository.getIatas();
+        return new TreeSet<>(flightRepository.getIatas());
     }
 }

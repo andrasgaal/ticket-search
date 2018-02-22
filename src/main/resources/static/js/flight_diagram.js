@@ -13,11 +13,12 @@ class PriceDiagram extends React.Component {
         this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
         this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
         this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
-        this.handleFlighs = this.handleFlighs.bind(this);
+        this.updateFlights = this.updateFlights.bind(this);
     }
 
     componentDidMount() {
         this.getIatas();
+        this.updateFlights();
     }
 
     getIatas() {
@@ -29,20 +30,29 @@ class PriceDiagram extends React.Component {
         });
     }
 
+    updateFlights() {
+        let self = this;
+        $.ajax({
+            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.state.departureStation
+            + "&arrivalStation=" + this.state.arrivalStation + "&flightDate=" + this.state.flightDate
+        }).done(function (flights) {
+            self.setState({"flights": flights});
+        });
+    }
+
     handleDepartureStationChange(iata) {
-        this.setState({"departureStation": iata});
+        this.state.departureStation = iata;
+        this.updateFlights();
     }
 
     handleArrivalStationChange(iata) {
-        this.setState({"arrivalStation": iata});
+        this.state.arrivalStation = iata;
+        this.updateFlights();
     }
 
     handleFlightDateChange(date) {
-        this.setState({"flightDate": date});
-    }
-
-    handleFlighs(flights) {
-        this.setState({"flights": flights});
+        this.state.flightDate = date;
+        this.updateFlights();
     }
 
     render() {
@@ -57,8 +67,7 @@ class PriceDiagram extends React.Component {
                     <div className="separator"/>
                     <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
                     <div className="separator"/>
-                    <UpdateButton departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation}
-                                  flightDate={this.state.flightDate} onFlightsChange={this.handleFlighs}/>
+                    <UpdateButton onClick={this.updateFlights}/>
                 </div>
                 <div className="block">
                     <Diagram departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation} flights={this.state.flights}/>
@@ -134,26 +143,16 @@ class DatePicker extends React.Component {
 class UpdateButton extends React.Component {
     constructor(props) {
         super(props);
-        this.updateDiagram = this.updateDiagram.bind(this);
+        this.handleClick = this.handleClick.bind(this);
     }
 
-    // componentDidUpdate(){
-    //     this.updateDiagram()
-    // }
-
-    updateDiagram() {
-        let self = this;
-        $.ajax({
-            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.props.departureStation
-             + "&arrivalStation=" + this.props.arrivalStation + "&flightDate=" + this.props.flightDate
-        }).done(function (flights) {
-            self.props.onFlightsChange(flights)
-        });
+    handleClick() {
+        this.props.onClick()
     }
 
     render() {
         return (
-            <button className="btn btn-primary" type="button" onClick={this.updateDiagram}>Update</button>
+            <button className="btn btn-primary" type="button" onClick={this.handleClick}>Update</button>
         )
     }
 }

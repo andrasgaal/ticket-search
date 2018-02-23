@@ -13,28 +13,63 @@ label {
 .block {
     display: inline-block;
     vertical-align: top;
+    padding: 20px;
+}
+
+.diagram-wrapper{
+    padding: 20px;
+    box-shadow: 0px 2px 8px 2px rgba(50,50,50,0.5);
 }
 
 .diagram-title {
     font-weight: bold;
     font-size: large;
+    display: table-caption;
 }
 
 .diagram-body {
+    border-left: 3px solid;
+    border-bottom: 3px solid;
+    padding-left: 2px;
+}
 
+.diagram-x-axis-details{
+    display: table-cell;
+    vertical-align: top;
+    padding-right: 5px;
+    font-weight: bold;
 }
 
 .diagram-element {
     width: 20px;
-    display: inline-block;
+    vertical-align: bottom;
+    position: relative;
 }
 
 .diagram-element-column{
-    margin: 2px;
+    margin: 0px 2px;
     border: 1px solid;
+    border-bottom: 0px;
 }
 
-.diagram-element-date{
+.diagram-element-date {
     transform: rotate(90deg);
     white-space: nowrap;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -30px;
+}
+
+.table-row{
+    display: table-row;
+}
+
+.table-cell{
+    display: table-cell;
+}
+
+.origo{
+    text-align: right;
+    font-weight: bold;
 }

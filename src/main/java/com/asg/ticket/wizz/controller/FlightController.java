@@ -12,6 +12,7 @@ import java.util.*;
 
 import static java.time.LocalDate.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
+import static java.util.Collections.reverseOrder;
 import static java.util.stream.Collectors.toMap;
 
 @RestController
@@ -30,7 +31,7 @@ public class FlightController {
     public Map<LocalDate, Flight> getFlightsGroupBySearchDate(@RequestParam String departureStation, @RequestParam String arrivalStation, @RequestParam String flightDate) {
         List<Flight> flights = getFlights(departureStation, arrivalStation, flightDate);
 
-        return new TreeMap<>(flights.stream().collect(toMap(
+        Map<LocalDate, Flight> flightsGroupBySearchDate = flights.stream().collect(toMap(
                 flght -> flght.getSearchDateTime().toLocalDate(),
                 flight -> flight,
                 (flight1, flight2) -> {
@@ -38,7 +39,11 @@ public class FlightController {
                     return new Flight(flight1.getId(), flight1.getSearchDateTime(), flight1.getFlightDateTime(), flight1.getDepartureStation(),
                             flight1.getArrivalStation(), roundernAvgPrice);
                 })
-        ));
+        );
+
+        Map<LocalDate, Flight> flightsGroupBySearchDateInDescendingOrder = new TreeMap<>(reverseOrder());
+        flightsGroupBySearchDateInDescendingOrder.putAll(flightsGroupBySearchDate);
+        return flightsGroupBySearchDateInDescendingOrder;
     }
 
     @GetMapping("/iatas")

@@ -19,7 +19,7 @@ search:
 #  initialDelay: 3600000
 #  cronScheadule: "0 0 0,6,12,18 * * *" # every day at 0:00 6:00 12:00 18:00
   cronScheadule: "0 0/15 * * * *"
-  days: 5
+  days: 30
   whitelist:
     cities:
       enabled: true

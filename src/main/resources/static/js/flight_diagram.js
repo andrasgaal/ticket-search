@@ -27,7 +27,9 @@ class PriceDiagram extends React.Component {
             url: "http://localhost:8080/iatas"
         }).done(function (data) {
             self.setState({iatas: data});
-        });
+        }).fail(function () {
+            self.setState({iatas: []});
+        })
     }
 
     updateFlights() {
@@ -37,6 +39,8 @@ class PriceDiagram extends React.Component {
             + "&arrivalStation=" + this.state.arrivalStation + "&flightDate=" + this.state.flightDate
         }).done(function (flights) {
             self.setState({"flights": flights});
+        }).fail(function () {
+            self.setState({"flights": {}});
         });
     }
 
@@ -167,16 +171,16 @@ class Diagram extends React.Component {
     }
 
     render(){
+        // egy oszlopban különböző színnel a különböző időpontban lekért árak
         let diagramElements = [];
         let flights = this.props.flights;
+        var maxPrice = 0;
         if(!$.isEmptyObject(flights)) {
-            var maxPrice = 0;
             for (var key in flights){
                 if(flights[key].priceInHuf > maxPrice){
                     maxPrice = flights[key].priceInHuf;
                 }
             }
-
             for(var searchDate in flights) {
                 let flight = flights[searchDate];
                 let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
@@ -187,10 +191,19 @@ class Diagram extends React.Component {
             }
         }
         return(
-            <div>
+            <div className="diagram-wrapper">
                 <div className="diagram-title">From {this.props.departureStation} to {this.props.arrivalStation}</div>
-                <div className="diagram-body">
-                    <div>{diagramElements}</div>
+                <div className="table-row">
+                    <div className="diagram-x-axis-details">
+                        {maxPrice}
+                    </div>
+                    <div className="diagram-body table-cell">
+                        {diagramElements}
+                    </div>
+                </div>
+                <div className="table-row">
+                    <div className="origo table-cell">Now</div>
+                    <div className="table-cell"></div>
                 </div>
             </div>
         )
@@ -199,7 +212,7 @@ class Diagram extends React.Component {
 
 function DiagramElement(props) {
     return (
-        <div className="diagram-element">
+        <div className="diagram-element table-cell">
             <div className="diagram-element-column bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>
             <div className="diagram-element-date">{props.searchDateTime}</div>
         </div>

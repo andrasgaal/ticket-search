@@ -8,8 +8,9 @@ class PriceDiagram extends React.Component {
             departureStation: "BUD",
             arrivalStation: "LTN",
             flightDate: today,
-            flights: {}
-        }
+            outboundFlights: {},
+            inboundFlights: {}
+        };
         this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
         this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
         this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
@@ -38,9 +39,18 @@ class PriceDiagram extends React.Component {
             url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.state.departureStation
             + "&arrivalStation=" + this.state.arrivalStation + "&flightDate=" + this.state.flightDate
         }).done(function (flights) {
-            self.setState({"flights": flights});
+            self.setState({"outboundFlights": flights});
         }).fail(function () {
-            self.setState({"flights": {}});
+            self.setState({"outboundFlights": {}});
+        });
+
+        $.ajax({
+            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.state.arrivalStation
+            + "&arrivalStation=" + this.state.departureStation + "&flightDate=" + this.state.flightDate
+        }).done(function (flights) {
+            self.setState({"inboundFlights": flights});
+        }).fail(function () {
+            self.setState({"inboundFlights": {}});
         });
     }
 
@@ -63,9 +73,10 @@ class PriceDiagram extends React.Component {
         return (
             <div>
                 <div className="block">
+                    <p className="title">Stations</p>
                     <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation}
                               labelText={"From"} onStationChange={this.handleDepartureStationChange}/>
-                    <div className="separator"/>
+                    {/*<div className="separator"/>*/}
                     <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation}
                               labelText={"To"} onStationChange={this.handleArrivalStationChange}/>
                     <div className="separator"/>
@@ -74,7 +85,10 @@ class PriceDiagram extends React.Component {
                     <UpdateButton onClick={this.updateFlights}/>
                 </div>
                 <div className="block">
-                    <Diagram departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation} flights={this.state.flights}/>
+                    <Diagram departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation} flights={this.state.outboundFlights}/>
+                </div>
+                <div className="block">
+                    <Diagram departureStation={this.state.arrivalStation} arrivalStation={this.state.departureStation} flights={this.state.inboundFlights}/>
                 </div>
             </div>
         );
@@ -101,8 +115,8 @@ class Dropdown extends React.Component {
         });
 
         return (
-            <div>
-                <label htmlFor={station + "-station-dropdown-button"}>{this.props.labelText}</label>
+            <div className="dropdown-wrapper">
+                {/*<label htmlFor={station + "-station-dropdown-button"}>{this.props.labelText}</label>*/}
                 <div className="dropdown">
                     <button className="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown"
                             id={station + "-station-dropdown-button"}>

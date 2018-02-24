@@ -32,7 +32,7 @@ public class CitiesFetcher extends BaseProcessor<Cities> {
         Cities cities = GSON.fromJson(response.getBody(), Cities.class);
         log.info("Received cities={}", cities);
 
-        reportCities(cities);
+//        reportCities(cities);
         return cities;
     }
 

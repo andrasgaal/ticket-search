@@ -30,7 +30,7 @@ public class MetadataFetcher extends BaseProcessor<Metadata> {
         Metadata metadata = GSON.fromJson(response.getBody(), Metadata.class);
         log.info("Received metadata={}", metadata);
 
-        reportMetadata(metadata);
+//        reportMetadata(metadata);
         return metadata;
     }
 

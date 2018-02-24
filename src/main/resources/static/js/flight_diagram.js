@@ -1,94 +1,16 @@
-class PriceDiagram extends React.Component {
+class PriceDiagramSection extends React.Component {
     constructor() {
         super();
-        let todayIso = new Date().toISOString();
-        let today = todayIso.substring(0, todayIso.indexOf("T"));
-        this.state = {
-            iatas: [],
-            departureStation: "BUD",
-            arrivalStation: "LTN",
-            flightDate: today,
-            outboundFlights: {},
-            inboundFlights: {}
-        };
-        this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
-        this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
-        this.handleFlightDateChange = this.handleFlightDateChange.bind(this);
-        this.updateFlights = this.updateFlights.bind(this);
-    }
-
-    componentDidMount() {
-        this.getIatas();
-        this.updateFlights();
-    }
-
-    getIatas() {
-        let self = this;
-        $.ajax({
-            url: "http://localhost:8080/iatas"
-        }).done(function (data) {
-            self.setState({iatas: data});
-        }).fail(function () {
-            self.setState({iatas: []});
-        })
-    }
-
-    updateFlights() {
-        let self = this;
-        $.ajax({
-            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.state.departureStation
-            + "&arrivalStation=" + this.state.arrivalStation + "&flightDate=" + this.state.flightDate
-        }).done(function (flights) {
-            self.setState({"outboundFlights": flights});
-        }).fail(function () {
-            self.setState({"outboundFlights": {}});
-        });
-
-        $.ajax({
-            url: "http://localhost:8080/flights/groupby/searchdate?departureStation=" + this.state.arrivalStation
-            + "&arrivalStation=" + this.state.departureStation + "&flightDate=" + this.state.flightDate
-        }).done(function (flights) {
-            self.setState({"inboundFlights": flights});
-        }).fail(function () {
-            self.setState({"inboundFlights": {}});
-        });
-    }
-
-    handleDepartureStationChange(iata) {
-        this.state.departureStation = iata;
-        this.updateFlights();
-    }
-
-    handleArrivalStationChange(iata) {
-        this.state.arrivalStation = iata;
-        this.updateFlights();
-    }
-
-    handleFlightDateChange(date) {
-        this.state.flightDate = date;
-        this.updateFlights();
     }
 
     render() {
         return (
             <div>
                 <div className="block">
-                    <p className="title">Stations</p>
-                    <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation}
-                              labelText={"From"} onStationChange={this.handleDepartureStationChange}/>
-                    {/*<div className="separator"/>*/}
-                    <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation}
-                              labelText={"To"} onStationChange={this.handleArrivalStationChange}/>
-                    <div className="separator"/>
-                    <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
-                    <div className="separator"/>
-                    <UpdateButton onClick={this.updateFlights}/>
+                    <Diagram departureStation={this.props.departureStation} arrivalStation={this.props.arrivalStation} flights={this.props.outboundFlights}/>
                 </div>
                 <div className="block">
-                    <Diagram departureStation={this.state.departureStation} arrivalStation={this.state.arrivalStation} flights={this.state.outboundFlights}/>
-                </div>
-                <div className="block">
-                    <Diagram departureStation={this.state.arrivalStation} arrivalStation={this.state.departureStation} flights={this.state.inboundFlights}/>
+                    <Diagram departureStation={this.props.arrivalStation} arrivalStation={this.props.departureStation} flights={this.props.inboundFlights}/>
                 </div>
             </div>
         );
@@ -116,7 +38,6 @@ class Dropdown extends React.Component {
 
         return (
             <div className="dropdown-wrapper">
-                {/*<label htmlFor={station + "-station-dropdown-button"}>{this.props.labelText}</label>*/}
                 <div className="dropdown">
                     <button className="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown"
                             id={station + "-station-dropdown-button"}>
@@ -147,30 +68,13 @@ class DatePicker extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className="date-picker">
                 <label htmlFor="flight-date">Flight date</label>
                 <div>
                     <input id="flight-date" type="date" defaultValue={this.props.flightDate}
                            onChange={this.handleFlightDateChange}/>
                 </div>
             </div>
-        )
-    }
-}
-
-class UpdateButton extends React.Component {
-    constructor(props) {
-        super(props);
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    handleClick() {
-        this.props.onClick()
-    }
-
-    render() {
-        return (
-            <button className="btn btn-primary" type="button" onClick={this.handleClick}>Update</button>
         )
     }
 }
@@ -201,7 +105,7 @@ class Diagram extends React.Component {
             "year": fullYear.substring(2, fullYear.length),
             "month": splittedSearchDate[1],
             "day": splittedSearchDate[2]
-        }
+        };
         return dateMap;
     }
 
@@ -265,7 +169,140 @@ function DiagramElementDate(props) {
     )
 }
 
+
+class HeatMapSection extends React.Component {
+    constructor() {
+        super();
+        this.state = {
+            flights: {}
+        }
+    }
+
+    updateFlights() {
+        let self = this;
+        $.ajax({
+            url: "http://localhost:8080/flights/" + this.state.departureStation + "/" +
+            this.state.arrivalStation
+        }).done(function (flights) {
+            self.setState({"flights": flights});
+        }).fail(function () {
+            self.setState({"flights": {}});
+        });
+    }
+
+    render(){
+        let flights = this.state.flights;
+        var test = []
+        for(var key in flights){
+            test.push(flights[key])
+        }
+
+        return(<div></div>)
+    }
+}
+
+class Dashboard extends React.Component {
+    constructor() {
+        super();
+        let todayIso = new Date().toISOString();
+        let today = todayIso.substring(0, todayIso.indexOf("T"));
+        this.state = {
+            iatas: [],
+            departureStation: "BUD",
+            arrivalStation: "LTN",
+            flightDate: today,
+            outboundFlights: {},
+            inboundFlights: {}
+        };
+
+        this.handleDepartureStationChange = this.handleDepartureStationChange.bind(this);
+        this.handleArrivalStationChange = this.handleArrivalStationChange.bind(this);
+        this.handleFlightDateChange = this.handleFlightDateChange.bind(this)
+        this.updateFlights = this.updateFlights.bind(this);
+    }
+
+    componentDidMount() {
+        this.getIatas();
+        this.updateFlights();
+    }
+
+    getIatas() {
+        let self = this;
+        $.ajax({
+            url: "http://localhost:8080/flights/iatas"
+        }).done(function (data) {
+            self.setState({iatas: data});
+        }).fail(function () {
+            self.setState({iatas: []});
+        })
+    }
+
+    handleDepartureStationChange(iata) {
+        this.state.departureStation = iata;
+        this.updateFlights();
+    }
+
+    handleArrivalStationChange(iata) {
+        this.state.arrivalStation = iata;
+        this.updateFlights();
+    }
+
+    handleFlightDateChange(date) {
+        this.state.flightDate = date;
+        this.updateFlights();
+    }
+
+    updateFlights() {
+        let self = this;
+        $.ajax({
+            url: "http://localhost:8080/flights/"+this.state.departureStation+"/"+
+            this.state.arrivalStation+"/"+this.state.flightDate+"/groupby/searchdate"
+        }).done(function (flights) {
+            self.setState({outboundFlights: flights});
+        }).fail(function () {
+            self.setState({outboundFlights: {}});
+        });
+
+        $.ajax({
+            url: "http://localhost:8080/flights/"+this.state.arrivalStation+"/"+
+            this.state.departureStation+"/"+this.state.flightDate+"/groupby/searchdate"
+        }).done(function (flights) {
+            self.setState({"inboundFlights": flights});
+        }).fail(function () {
+            self.setState({"inboundFlights": {}});
+        });
+    }
+
+
+    render(){
+        return(
+            <div>
+                <div className="block">
+                    <p className="title">Stations</p>
+                    <Dropdown iatas={this.state.iatas} station={"departure"} chosenIata={this.state.departureStation}
+                              onStationChange={this.handleDepartureStationChange}/>
+                    <Dropdown iatas={this.state.iatas} station={"arrival"} chosenIata={this.state.arrivalStation}
+                              onStationChange={this.handleArrivalStationChange}/>
+                    <DatePicker flightDate={this.state.flightDate} onFlightDateChange={this.handleFlightDateChange}/>
+                </div>
+                <div className="section">
+                    <PriceDiagramSection
+                        iatas={this.state.iatas}
+                        departureStation={this.state.departureStation}
+                        arrivalStation={this.state.arrivalStation}
+                        outboundFlights={this.state.outboundFlights}
+                        inboundFlights={this.state.inboundFlights}
+                    />
+                </div>
+                <div className="section">
+                    <HeatMapSection/>
+                </div>
+            </div>
+        )
+    }
+}
+
 ReactDOM.render(
-    <PriceDiagram/>
-    , document.getElementById('price-diagram')
+    <Dashboard/>,
+    document.getElementById('dashboard')
 );

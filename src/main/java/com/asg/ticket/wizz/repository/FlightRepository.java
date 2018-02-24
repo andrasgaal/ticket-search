@@ -10,5 +10,8 @@ import java.util.List;
 public interface FlightRepository extends MongoRepository<Flight, String>, CustomFlightRepository{
 
     @Query(value="{ 'departureStation' : ?0, 'arrivalStation' : ?1, 'flightDateTime' : {$gte: ?2, $lt: ?3}}")
-    List<Flight> getFlights(String departureIata, String arrivalIata, LocalDateTime flightDateStartOfDay, LocalDateTime flightDateEndOfDay);
+    List<Flight> getFlightsForRouteAndDate(String departureIata, String arrivalIata, LocalDateTime flightDateStartOfDay, LocalDateTime flightDateEndOfDay);
+
+    @Query(value="{ 'departureStation' : ?0, 'arrivalStation' : ?1}}")
+    List<Flight> getFlightsForRoute(String departureIata, String arrivalIata);
 }

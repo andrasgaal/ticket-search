@@ -6,6 +6,14 @@ label {
     font-weight: bold;
 }
 
+#dashboard{
+    display: table;
+}
+
+.section{
+    display: table-row;
+}
+
 .separator {
     height: 50px;
 }
@@ -16,14 +24,18 @@ label {
     padding: 20px;
 }
 
+.title{
+    font-weight: bold;
+    margin: 5px 0px;
+}
+
 .dropdown-wrapper{
     display: inline-block;
     margin: 10px 10px 10px 0px;
 }
 
-.title{
-    font-weight: bold;
-    margin: 5px 0px;
+.date-picker{
+    padding-top: 10px;
 }
 
 .diagram-wrapper{
@@ -35,6 +47,7 @@ label {
     font-weight: bold;
     font-size: large;
     display: table-caption;
+    white-space: nowrap;
 }
 
 .diagram-body {
@@ -52,6 +65,7 @@ label {
     vertical-align: top;
     padding-right: 5px;
     font-weight: bold;
+    text-align: right;
 }
 
 .diagram-element {

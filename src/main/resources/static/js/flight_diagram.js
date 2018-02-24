@@ -170,31 +170,50 @@ class Diagram extends React.Component {
         tippy('[title]');
     }
 
+    getMaxPriceFromFlights(flights) {
+        var maxPrice = 0;
+        for (var key in flights) {
+            if (flights[key].priceInHuf > maxPrice) {
+                maxPrice = flights[key].priceInHuf;
+            }
+        }
+        return maxPrice;
+    }
+
+    getDateMapFromSearchDate(searchDate) {
+        let splittedSearchDate = searchDate.split("-");
+        let fullYear = splittedSearchDate[0];
+        let dateMap = {
+            "year": fullYear.substring(2, fullYear.length),
+            "month": splittedSearchDate[1],
+            "day": splittedSearchDate[2]
+        }
+        return dateMap;
+    }
+
     render(){
         // egy oszlopban különböző színnel a különböző időpontban lekért árak
         let diagramElements = [];
+        let diagramElementDates = [];
         let flights = this.props.flights;
-        var maxPrice = 0;
-        if(!$.isEmptyObject(flights)) {
-            for (var key in flights){
-                if(flights[key].priceInHuf > maxPrice){
-                    maxPrice = flights[key].priceInHuf;
-                }
-            }
-            for(var searchDate in flights) {
-                let flight = flights[searchDate];
-                let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
-                diagramElements.push(<DiagramElement key={flight.id}
-                                                     searchDateTime={searchDate}
-                                                     priceInHuf={flight.priceInHuf}
-                                                     pricePercentage={pricePercentage}/>);
-            }
+        var maxPrice = this.getMaxPriceFromFlights(flights);
+        for (var searchDate in flights) {
+            let flight = flights[searchDate];
+            let pricePercentage = (flight.priceInHuf / maxPrice) * 100;
+            diagramElements.push(<DiagramElement key={flight.id}
+                                                 searchDateTime={searchDate}
+                                                 priceInHuf={flight.priceInHuf}
+                                                 pricePercentage={pricePercentage}/>);
+
+            let dateMap = this.getDateMapFromSearchDate(searchDate);
+            diagramElementDates.push(<DiagramElementDate dateMap={dateMap} key={searchDate}/>)
         }
+
         return(
             <div className="diagram-wrapper">
                 <div className="diagram-title">From {this.props.departureStation} to {this.props.arrivalStation}</div>
                 <div className="table-row">
-                    <div className="diagram-x-axis-details">
+                    <div className="diagram-y-axis-details table-cell">
                         {maxPrice}
                     </div>
                     <div className="diagram-body table-cell">
@@ -202,8 +221,10 @@ class Diagram extends React.Component {
                     </div>
                 </div>
                 <div className="table-row">
-                    <div className="origo table-cell">Now</div>
-                    <div className="table-cell"></div>
+                    <div className="origo table-cell"/>
+                    <div className="diagram-x-axis-details table-cell">
+                        {diagramElementDates}
+                    </div>
                 </div>
             </div>
         )
@@ -214,7 +235,18 @@ function DiagramElement(props) {
     return (
         <div className="diagram-element table-cell">
             <div className="diagram-element-column bg-success" style={{height: props.pricePercentage*2+'px'}} title={props.priceInHuf}/>
-            <div className="diagram-element-date">{props.searchDateTime}</div>
+        </div>
+    )
+}
+
+function DiagramElementDate(props) {
+    return (
+        <div className="diagram-element-date">
+            <div>{props.dateMap.day}</div>
+            <div>-</div>
+            <div>{props.dateMap.month}</div>
+            <div>-</div>
+            <div>{props.dateMap.year}</div>
         </div>
     )
 }

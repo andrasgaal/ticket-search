@@ -28,13 +28,17 @@ label {
 }
 
 .diagram-body {
-    border-left: 3px solid;
-    border-bottom: 3px solid;
+    border-left: 2px solid;
+    border-bottom: 2px solid;
     padding-left: 2px;
 }
 
 .diagram-x-axis-details{
-    display: table-cell;
+    vertical-align: top;
+    padding-top: 5px;
+}
+
+.diagram-y-axis-details{
     vertical-align: top;
     padding-right: 5px;
     font-weight: bold;
@@ -53,12 +57,12 @@ label {
 }
 
 .diagram-element-date {
-    transform: rotate(90deg);
-    white-space: nowrap;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -30px;
+    display: inline-block;
+    line-height: 10px;
+    text-align: center;
+    padding: 0px 3px;
+    font-size: 0.8em;
+    width: 21px;
 }
 
 .table-row{

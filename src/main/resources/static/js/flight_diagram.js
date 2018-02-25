@@ -178,11 +178,15 @@ class HeatMapSection extends React.Component {
         }
     }
 
+    componentDidMount() {
+        this.updateFlights();
+    }
+
     updateFlights() {
         let self = this;
         $.ajax({
-            url: "http://localhost:8080/flights/" + this.state.departureStation + "/" +
-            this.state.arrivalStation
+            url: "http://localhost:8080/flights/"+this.props.departureStation+"/"+this.props.arrivalStation+
+            "/groupby/searchdate/flightdate"
         }).done(function (flights) {
             self.setState({"flights": flights});
         }).fail(function () {
@@ -295,7 +299,10 @@ class Dashboard extends React.Component {
                     />
                 </div>
                 <div className="section">
-                    <HeatMapSection/>
+                    <HeatMapSection
+                        departureStation={this.state.departureStation}
+                        arrivalStation={this.state.arrivalStation}
+                    />
                 </div>
             </div>
         )

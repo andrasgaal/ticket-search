@@ -17,7 +17,7 @@ public class CurrencyExchangeUtil {
         Map<String, Double> rates = currencyExchangeHolder.getRates();
         Double localToHufRate = rates.get(currency);
         if (localToHufRate != null) {
-            return (1 / localToHufRate) * amount;
+            return Double.valueOf((1 / localToHufRate) * amount).intValue();
         }
         throw new CurrencyExchangeException("Currency not found, " + currency);
     }

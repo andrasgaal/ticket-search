@@ -54,11 +54,17 @@ public class FlightController {
         return flightsGroupBySearchDateInDescendingOrder;
     }
 
-    @GetMapping("/{departureStation}/{arrivalStation}/groupby/searchdate/flightdate")
-    public Map<LocalDate, Map<LocalDate, Flight>> getFlightsForRouteGroupBySearchDateAndFlightDate(@PathVariable String departureStation, @PathVariable String arrivalStation) {
-        List<Flight> flights = getFlightsForRoute(departureStation, arrivalStation);
+    @GetMapping("/heatmap/{departureStation}/{arrivalStation}/{flightDatesToSearchFromFrom}/{searchDatestoSearchFromFrom}")
+    public Map<LocalDate, Map<LocalDate, Flight>> getFlightsForRouteHeatmap(@PathVariable String departureStation, @PathVariable String arrivalStation, @PathVariable String flightDatesToSearchFromFrom, @PathVariable String searchDatestoSearchFromFrom) {
 
-        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDate = flights.stream()
+        LocalDate flightDatesFrom = LocalDate.parse(flightDatesToSearchFromFrom, ISO_DATE);
+        LocalDate searchDatesFrom = LocalDate.parse(searchDatestoSearchFromFrom, ISO_DATE);
+
+        List<Flight> flightsForRouteAfterDates = flightRepository.getFlightsForRouteAfterDates(departureStation, arrivalStation, flightDatesFrom.atStartOfDay(), searchDatesFrom.atStartOfDay());
+
+
+
+        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDate = flightsForRouteAfterDates.stream()
                 .collect(groupingBy(
                         flight -> flight.getSearchDateTime().toLocalDate(),
                         toMapBySearchDate(flight -> flight.getFlightDateTime().toLocalDate())

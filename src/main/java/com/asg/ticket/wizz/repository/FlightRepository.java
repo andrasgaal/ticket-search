@@ -15,6 +15,6 @@ public interface FlightRepository extends MongoRepository<Flight, String>, Custo
     @Query(value="{ 'departureStation': ?0, 'arrivalStation': ?1}}")
     List<Flight> getFlightsForRoute(String departureIata, String arrivalIata);
 
-    @Query(value="{ 'departureStation': ?0, 'arrivalStation': ?1, 'flightDateTime': {$gte: ?2}, 'searchDateTime': {$gte: ?3}}}")
-    List<Flight> getFlightsForRouteAfterDates(String departureIata, String arrivalIata, LocalDateTime flightDatesFrom, LocalDateTime searchDatesFrom);
+    @Query(value="{ 'departureStation': ?0, 'arrivalStation': ?1, 'flightDateTime': {$gte: ?2, $lt: ?3}, 'searchDateTime': {$gte: ?4}}}")
+    List<Flight> getFlightsForRouteAfterSearchDatesBeforeFlightDate(String departureIata, String arrivalIata, LocalDateTime flightDatesFrom, LocalDateTime flightDatesUntil, LocalDateTime searchDatesFrom);
 }

@@ -9,12 +9,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
+import static java.time.LocalDate.now;
 import static java.time.LocalDate.parse;
 import static java.time.format.DateTimeFormatter.ISO_DATE;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
@@ -54,25 +60,50 @@ public class FlightController {
         return flightsGroupBySearchDateInDescendingOrder;
     }
 
-    @GetMapping("/heatmap/{departureStation}/{arrivalStation}/{flightDatesToSearchFromFrom}/{searchDatestoSearchFromFrom}")
-    public Map<LocalDate, Map<LocalDate, Flight>> getFlightsForRouteHeatmap(@PathVariable String departureStation, @PathVariable String arrivalStation, @PathVariable String flightDatesToSearchFromFrom, @PathVariable String searchDatestoSearchFromFrom) {
+    @GetMapping("/heatmap/{departureStation}/{arrivalStation}/{flightDatesToSearchUntil}/{searchDatestoSearchFrom}")
+    public Map<LocalDate, Map<LocalDate, Flight>> getFlightsForRouteHeatmap(
+            @PathVariable String departureStation, @PathVariable String arrivalStation,
+            @PathVariable String flightDatesToSearchUntil, @PathVariable String searchDatestoSearchFrom) {
 
-        LocalDate flightDatesFrom = LocalDate.parse(flightDatesToSearchFromFrom, ISO_DATE);
-        LocalDate searchDatesFrom = LocalDate.parse(searchDatestoSearchFromFrom, ISO_DATE);
+        LocalDate flightDatesUntil = LocalDate.parse(flightDatesToSearchUntil, ISO_DATE);
+        LocalDate searchDatesFrom = LocalDate.parse(searchDatestoSearchFrom, ISO_DATE);
 
-        List<Flight> flightsForRouteAfterDates = flightRepository.getFlightsForRouteAfterDates(departureStation, arrivalStation, flightDatesFrom.atStartOfDay(), searchDatesFrom.atStartOfDay());
+        List<Flight> flightsForRouteAfterSearchDatesBeforFlightDate = flightRepository.getFlightsForRouteAfterSearchDatesBeforeFlightDate(
+                departureStation, arrivalStation, LocalDateTime.now(), flightDatesUntil.atStartOfDay(), searchDatesFrom.atStartOfDay());
 
-
-
-        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDate = flightsForRouteAfterDates.stream()
+        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDate = flightsForRouteAfterSearchDatesBeforFlightDate.stream()
                 .collect(groupingBy(
                         flight -> flight.getSearchDateTime().toLocalDate(),
                         toMapBySearchDate(flight -> flight.getFlightDateTime().toLocalDate())
-        ));
+                ));
 
-        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDateInDescendingOrder = new TreeMap<>(reverseOrder());
-        flightsGroupBySearchDateAndFlightDateInDescendingOrder.putAll(flightsGroupBySearchDateAndFlightDate);
-        return flightsGroupBySearchDateAndFlightDateInDescendingOrder;
+        Stream
+                .iterate(searchDatesFrom, date -> date.plusDays(1))
+                .limit(DAYS.between(searchDatesFrom, now()))
+                .forEach(searchDate -> {
+                    //stupid putifabsent return null if the key was not there...
+                    flightsGroupBySearchDateAndFlightDate.putIfAbsent(searchDate, new HashMap<>());
+                    Map<LocalDate, Flight> flightsByFlightDate = flightsGroupBySearchDateAndFlightDate.get(searchDate);
+
+                    //fill flights by flight date with missing dates
+                    Stream
+                            .iterate(now(), date -> date.plusDays(1))
+                            .limit(DAYS.between(now(), flightDatesUntil))
+                            .forEach(flightDate -> flightsByFlightDate.putIfAbsent(flightDate, emptyFlight()));
+
+                    Map<LocalDate, Flight> flightsByFlightDateDescOrder = new TreeMap<>(reverseOrder());
+                    flightsByFlightDateDescOrder.putAll(flightsByFlightDate);
+
+                    flightsGroupBySearchDateAndFlightDate.put(searchDate, flightsByFlightDateDescOrder);
+                });
+
+        Map<LocalDate, Map<LocalDate, Flight>> flightsGroupBySearchDateAndFlightDateDescOrder = new TreeMap<>(reverseOrder());
+        flightsGroupBySearchDateAndFlightDateDescOrder.putAll(flightsGroupBySearchDateAndFlightDate);
+        return flightsGroupBySearchDateAndFlightDateDescOrder;
+    }
+
+    private Flight emptyFlight() {
+        return new Flight("0", LocalDateTime.now(), LocalDateTime.now(), "", "", 0);
     }
 
     private Collector<Flight, ?, Map<LocalDate, Flight>> toMapBySearchDate(Function<Flight, LocalDate> flightToDate) {

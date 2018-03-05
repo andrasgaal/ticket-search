@@ -84,10 +84,6 @@ class Diagram extends React.Component {
         super(props)
     }
 
-    componentDidUpdate(){
-        tippy('[title]');
-    }
-
     getMaxPriceFromFlights(flights) {
         var maxPrice = 0;
         for (var key in flights) {
@@ -174,7 +170,9 @@ class HeatMapSection extends React.Component {
     constructor() {
         super();
         this.state = {
-            flights: {}
+            flights: null,
+            flightDateToSearchUntil: moment().add(3, "days").format("YYYY-MM-DD"),
+            searchDatestoSearchFrom: moment().subtract(3, "days").format("YYYY-MM-DD")
         }
     }
 
@@ -185,36 +183,53 @@ class HeatMapSection extends React.Component {
     updateFlights() {
         let self = this;
         $.ajax({
-            url: "http://localhost:8080/flights/"+this.props.departureStation+"/"+this.props.arrivalStation+
-            "/groupby/searchdate/flightdate"
+            url: "http://localhost:8080/flights/heatmap/"+this.props.departureStation+"/"+this.props.arrivalStation+
+            "/"+this.state.flightDateToSearchUntil+"/"+this.state.searchDatestoSearchFrom
         }).done(function (flights) {
-            self.setState({"flights": flights});
+            self.setState({flights: flights})
         }).fail(function () {
-            self.setState({"flights": {}});
+            self.setState({flights: {}})
         });
     }
 
     render(){
-        let flights = this.state.flights;
-        var test = []
-        for(var key in flights){
-            test.push(flights[key])
+        let flightsBySearchDate = this.state.flights;
+        let heatmapElements = [];
+        for(var searchDate in flightsBySearchDate) {
+            let flightsByFlightDate = flightsBySearchDate[searchDate];
+            for (var flightDate in flightsByFlightDate) {
+                let flight = flightsByFlightDate[flightDate];
+                heatmapElements.push(<HeatmapElement key={flight.id} flight={flight}/>)
+            }
+            heatmapElements.push(<div key={searchDate} className="table-row"/>)
         }
 
-        return(<div></div>)
+        if(this.state.flights){
+            return (
+                <div className="heatmap-diagram">
+                    {heatmapElements}
+                </div>
+            )
+        }
+        return (<div>Loading heatmap...</div>)
+
     }
+}
+
+function HeatmapElement(props) {
+    return (
+        <div className="heatmap-element table-cell" title={props.flight.priceInHuf}/>
+    )
 }
 
 class Dashboard extends React.Component {
     constructor() {
         super();
-        let todayIso = new Date().toISOString();
-        let today = todayIso.substring(0, todayIso.indexOf("T"));
         this.state = {
             iatas: [],
             departureStation: "BUD",
             arrivalStation: "LTN",
-            flightDate: today,
+            flightDate: moment().format("YYYY-MM-DD"),
             outboundFlights: {},
             inboundFlights: {}
         };
@@ -228,6 +243,10 @@ class Dashboard extends React.Component {
     componentDidMount() {
         this.getIatas();
         this.updateFlights();
+    }
+
+    componentDidUpdate(){
+        tippy('[title]');
     }
 
     getIatas() {

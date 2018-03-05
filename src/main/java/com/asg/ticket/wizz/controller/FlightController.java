@@ -79,7 +79,7 @@ public class FlightController {
 
         Stream
                 .iterate(searchDatesFrom, date -> date.plusDays(1))
-                .limit(DAYS.between(searchDatesFrom, now()))
+                .limit(DAYS.between(searchDatesFrom, now())+1)
                 .forEach(searchDate -> {
                     //stupid putifabsent return null if the key was not there...
                     flightsGroupBySearchDateAndFlightDate.putIfAbsent(searchDate, new HashMap<>());
@@ -103,7 +103,7 @@ public class FlightController {
     }
 
     private Flight emptyFlight() {
-        return new Flight("0", LocalDateTime.now(), LocalDateTime.now(), "", "", 0);
+        return new Flight(UUID.randomUUID().toString(), LocalDateTime.now(), LocalDateTime.now(), "", "", 0);
     }
 
     private Collector<Flight, ?, Map<LocalDate, Flight>> toMapBySearchDate(Function<Flight, LocalDate> flightToDate) {

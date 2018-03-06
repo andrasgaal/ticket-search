@@ -176,6 +176,16 @@ class HeatMapSection extends React.Component {
         }
     }
 
+    getHsl(percent, start, end) {
+        if(!percent){
+        return 'hsl('+0+', 0%, 60%)';
+        }
+        var a = percent / 100,
+            b = (end - start) * a,
+            c = b + start;
+        return 'hsl('+c+', 100%, 50%)';
+    }
+
     componentDidMount() {
         this.updateFlights();
     }
@@ -192,14 +202,41 @@ class HeatMapSection extends React.Component {
         });
     }
 
+    getBorderPrices(flightsBySearchDate) {
+        let minPrice = Number.MAX_VALUE;
+        let maxPrice = Number.MIN_VALUE;
+        for(var searchDate in flightsBySearchDate) {
+            let flightsByFlightDate = flightsBySearchDate[searchDate];
+            for (var flightDate in flightsByFlightDate) {
+                let flightPrice = flightsByFlightDate[flightDate].priceInHuf;
+                if(flightPrice > maxPrice && flightPrice !== 0){
+                    maxPrice = flightPrice
+                }
+                if(flightPrice < minPrice && flightPrice !== 0){
+                    minPrice = flightPrice
+                }
+            }
+        }
+        return [minPrice, maxPrice];
+    }
+
     render(){
         let flightsBySearchDate = this.state.flights;
         let heatmapElements = [];
+        let borderPrices = this.getBorderPrices(flightsBySearchDate);
+        let minPrice = borderPrices[0];
+        let maxPrice = borderPrices[1];
+        let priceDiff = maxPrice - minPrice;
         for(var searchDate in flightsBySearchDate) {
             let flightsByFlightDate = flightsBySearchDate[searchDate];
             for (var flightDate in flightsByFlightDate) {
                 let flight = flightsByFlightDate[flightDate];
-                heatmapElements.push(<HeatmapElement key={flight.id} flight={flight}/>)
+                let pricePercentage;
+                if(flight.priceInHuf !== 0){
+                    pricePercentage = ((flight.priceInHuf - minPrice-0.001) / priceDiff) * 100
+                }
+                let color = this.getHsl(pricePercentage, 120, 0);
+                heatmapElements.push(<HeatmapElement key={flight.id} flight={flight} color={color}/>)
             }
             heatmapElements.push(<div key={searchDate} className="table-row"/>)
         }
@@ -218,7 +255,7 @@ class HeatMapSection extends React.Component {
 
 function HeatmapElement(props) {
     return (
-        <div className="heatmap-element table-cell" title={props.flight.priceInHuf}/>
+        <div style={{backgroundColor: props.color}} className="heatmap-element table-cell" title={props.flight.priceInHuf}/>
     )
 }
 

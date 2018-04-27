@@ -1,0 +1,26 @@
+logging:
+  config: classpath:logback-live.xml
+
+custom:
+  rest:
+    connection:
+      connection-request-timeout: 10000
+      connect-timeout: 10000
+      read-timeout: 10000
+
+spring:
+  data:
+    mongodb:
+      database: "wizz"
+
+search:
+  threads: 30 # 0 to unlimited
+  cronScheadule: "0 0 0,6,12,18 * * *" # every day at 0:00 6:00 12:00 18:00
+  days: 365
+  whitelist:
+    cities:
+      enabled: false
+      iatas:
+    connections:
+      enabled: false
+      iatas:

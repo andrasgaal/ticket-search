@@ -7,6 +7,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.util.UriComponentsBuilder.fromHttpUrl;
@@ -17,7 +19,7 @@ public class CurrencyExchangeFetcher extends BaseProcessor<CurrencyExchangeHolde
 
     private static final String CURRENCY_URL = "https://api.fixer.io/latest";
 
-    CurrencyExchangeHolder fetchCurrencyExchange() {
+    CurrencyExchangeHolder fetchCurrencyExchange() throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -25,7 +27,7 @@ public class CurrencyExchangeFetcher extends BaseProcessor<CurrencyExchangeHolde
         log.info("Fetching currencies...");
         ResponseEntity<String> response = restTemplate.exchange(fromHttpUrl(CURRENCY_URL).queryParam("base", "HUF").toUriString(),
                 GET, entity, String.class);
-        CurrencyExchangeHolder currencyExchangeHolder = GSON.fromJson(response.getBody(), CurrencyExchangeHolder.class);
+        CurrencyExchangeHolder currencyExchangeHolder = mapper.readValue((response.getBody()), CurrencyExchangeHolder.class);
         log.info("Received currencies={}", currencyExchangeHolder);
         return currencyExchangeHolder;
     }

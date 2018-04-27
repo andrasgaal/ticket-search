@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 
@@ -20,14 +21,14 @@ public class MetadataFetcher extends BaseProcessor<Metadata> {
 
     private static final String METADATA_URL = "https://wizzair.com/static/metadata.json";
 
-    public Metadata fetchMetadata() {
+    public Metadata fetchMetadata() throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         log.info("Fetching metadata...");
         ResponseEntity<String> response = restTemplate.exchange(METADATA_URL, GET, entity, String.class);
-        Metadata metadata = GSON.fromJson(response.getBody(), Metadata.class);
+        Metadata metadata = mapper.readValue(response.getBody(), Metadata.class);
         log.info("Received metadata={}", metadata);
 
 //        reportMetadata(metadata);

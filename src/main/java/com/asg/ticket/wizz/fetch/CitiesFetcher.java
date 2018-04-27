@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 
@@ -20,7 +21,7 @@ public class CitiesFetcher extends BaseProcessor<Cities> {
 
     private static final String CITIES_PATH = "/asset/map";
 
-    public Cities fetchCities(Metadata metadata) {
+    public Cities fetchCities(Metadata metadata) throws IOException {
 
         String citiesUrl = UriComponentsBuilder.fromHttpUrl(metadata.getApiUrl())
                 .path(CITIES_PATH)
@@ -29,7 +30,7 @@ public class CitiesFetcher extends BaseProcessor<Cities> {
 
         log.info("Fetching cities...");
         ResponseEntity<String> response = restTemplate.exchange(citiesUrl, GET, entity, String.class);
-        Cities cities = GSON.fromJson(response.getBody(), Cities.class);
+        Cities cities = mapper.readValue(response.getBody(), Cities.class);
         log.info("Received cities={}", cities);
 
 //        reportCities(cities);

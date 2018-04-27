@@ -24,9 +24,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -103,18 +109,18 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
         return connection -> !iataWhitelist.getConnections().isEnabled() || iataWhitelist.getConnections().getIatas().contains(connection.getIata());
     }
 
-    private Optional<SearchResponse> futureSearchResponseForFlight(String departureStation, String arrivalStation, String departureDate) {
+    private Optional<SearchResponse> futureSearchResponseForFlight(String departureStation, String arrivalStation, String departureDate) throws IOException {
         RequestFlight[] requestFlights = {
                 new RequestFlight(departureStation, arrivalStation, departureDate)};
 
-        String postBody = GSON.toJson(new SearchRequest(requestFlights, valueOf(1)));
+        String postBody = mapper.writeValueAsString(new SearchRequest(requestFlights, valueOf(1)));
         HttpEntity<String> entity = new HttpEntity<>(postBody, jsonHeaders);
 
         log.info("Executing search for departureStation={}, arrivalStation={}, date={}",
                 departureStation, arrivalStation, departureDate);
         try {
             ResponseEntity<String> response = restTemplate.exchange(searchUrl, POST, entity, String.class);
-            SearchResponse searchResponse = GSON.fromJson(response.getBody(), SearchResponse.class);
+            SearchResponse searchResponse = mapper.readValue(response.getBody(), SearchResponse.class);
             log.info("Received search responses={}", searchResponse);
             return of(searchResponse);
         } catch (RestClientException e) {
@@ -199,7 +205,7 @@ public class FlightsFetcher extends BaseProcessor<List<SearchResponse>> {
                     log.error(e.getMessage());
                 }
             } else {
-                log.error("BASIC bundle not found for flight={}", responseFlight);
+                log.debug("BASIC bundle not found for flight={}", responseFlight);
             }
         };
     }
